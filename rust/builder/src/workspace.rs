@@ -8,7 +8,7 @@ use std::{
 pub(crate) struct Workspace {
     pub root: PathBuf,
     pub api: Option<PathBuf>,
-    pub native: Option<PathBuf>,
+    pub sdk_files: Vec<PathBuf>,
     pub sdk: Option<Value>,
     pub modules: BTreeMap<String, PathBuf>,
     _assets: tempfile::TempDir,
@@ -59,6 +59,18 @@ fn exports(
     Ok(())
 }
 
+fn sdk_source_files(directory: &Path, files: &mut Vec<PathBuf>) -> Result<()> {
+    for entry in std::fs::read_dir(directory).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        if entry.file_type().map_err(|e| e.to_string())?.is_dir() {
+            sdk_source_files(&entry.path(), files)?;
+        } else if entry.path().extension().is_some_and(|ext| ext == "ts") {
+            files.push(entry.path().canonicalize().map_err(|e| e.to_string())?);
+        }
+    }
+    Ok(())
+}
+
 impl Workspace {
     pub fn load(input: &Path, options: &BuildOptions) -> Result<Self> {
         let assets = tempfile::tempdir().map_err(|e| e.to_string())?;
@@ -96,7 +108,8 @@ impl Workspace {
             },
         };
         let mut modules = BTreeMap::new();
-        let (mut api, mut native, mut sdk) = (None, None, None);
+        let (mut api, mut sdk) = (None, None);
+        let mut sdk_files = Vec::new();
         if let Some(path) = sdk_path {
             let directory = path
                 .canonicalize()
@@ -132,6 +145,13 @@ impl Workspace {
             {
                 return Err("SDK ./native must export a declaration inside src/api".into());
             }
+            // SDK source is compiled, including private relative modules in
+            // node_modules that tsrs otherwise classifies as external libraries.
+            // Every SDK source file must be a depth-zero compilation input.
+            sdk_files.extend(modules.values().cloned());
+            sdk_source_files(&directory.join("src"), &mut sdk_files)?;
+            sdk_files.sort();
+            sdk_files.dedup();
             for name in [
                 "system",
                 "hardware",
@@ -152,7 +172,6 @@ impl Workspace {
                 json!({"name":"@dango/sdk", "version":version, "host_abi":embedts_engine::HOST_ABI}),
             );
             api = Some(api_directory);
-            native = Some(native_file);
         }
         if let Some(packages) = config.get("packages") {
             for package in packages
@@ -185,7 +204,7 @@ impl Workspace {
         Ok(Self {
             root,
             api,
-            native,
+            sdk_files,
             sdk,
             modules,
             _assets: assets,

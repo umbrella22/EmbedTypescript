@@ -9,7 +9,10 @@
     "check": "pnpm typecheck && pnpm check:apps",
     "typecheck": "tsrs --noEmit --project tsconfig.json",
     "check:apps": "pnpm --filter \"./examples/**\" -r check",
-    "build:apps": "python3 ../scripts/build_examples.py ../artifacts/apps"
+    "build:apps": "python3 ../scripts/build_examples.py ../artifacts/apps",
+    "test": "pnpm --filter @embedts/builder test",
+    "toolchain:build": "embedts-toolchain build --manifest ../rust/Cargo.toml",
+    "toolchain:install": "embedts-toolchain install"
   },
   "devDependencies": {
     "@embedts/builder": "workspace:*",

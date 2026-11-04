@@ -15,7 +15,7 @@ benchmarks/
   bench.py               本地构建、主机测量、日志比较
   test_protocol.py       证据协议回归
 
-OS 仓库的 tests/integration/benchmarks/script-engines/runner 提供真实宿主测量；build/host 命令通过 --dango-root 显式传入该 checkout。
+OS 仓库的 tests/benchmarks/script-engines/runner 提供真实宿主测量；build/host 命令通过 --dango-root 显式传入该 checkout。
 ```
 
 构建产物采用相同应用 ID：`lua/script-bench`、`ts/script-bench`。设备每次只运行与
@@ -97,7 +97,7 @@ python3 -B tests/integration/benchmarks/bench.py build \
 失败或日志缺失，比较器会拒绝出分。缩小单元需要同步更新两份实现、参考和 suite 版本。
 
 分别启动只启用 Lua 和只启用 TS 的正式固件，使用同一块板和同一份配置测试。
-固件切换和上传方式沿用 [设备验收流程](../../docs/history/ts-engine-device-validation.md)。
+固件切换和上传方式沿用 [设备验收流程](../../../docs/history/ts-engine-device-validation.md)。
 两份包使用同一个应用 ID，上传另一版本会覆盖测试应用。
 
 以下命令仅在设备已连接并启动对应固件后执行；将 `<运行时端口>` 换成实际端口：

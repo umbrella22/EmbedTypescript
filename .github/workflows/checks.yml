@@ -3,24 +3,87 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
-  standalone:
+  rust:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
-        with:
-          node-version: '24.11.1'
-      - name: Install pinned tools
+          sparse-checkout: |
+            rust
+            scripts
+      - name: Install pinned Rust
         run: |
           version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust/rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
           rustup toolchain install "$version" --profile minimal --component rustfmt
-          npm install --global pnpm@12.14.0 --ignore-scripts --no-audit --no-fund
       - run: cargo fetch --locked
         working-directory: rust
-      - run: pnpm -C typescript install --frozen-lockfile --ignore-scripts
-      - run: ./scripts/check.sh
-      - run: python3 scripts/build_examples.py artifacts/apps
+      - name: Check Rust without the TypeScript workspace
+        working-directory: rust
+        run: |
+          test ! -d ../typescript
+          cargo fmt --all --check
+          cargo test --workspace --features embedts-engine/compiler --locked --offline
+          cargo build -p embedts-builder --locked --offline
+      - run: python3 scripts/check_sources.py
+      - name: Restore integration sources
+        run: git sparse-checkout disable
+      - name: Check real SDK and integration protocols
+        env:
+          EMBEDTS_TEST_COMPILER: ${{ github.workspace }}/rust/target/debug/embedts
+        run: |
+          python3 -m unittest discover -s tests/integration -p 'test_*.py'
+          python3 -m unittest discover -s tests/integration/benchmarks -p 'test_*.py'
+      - run: python3 scripts/build_examples.py artifacts/apps --compiler rust/target/debug/embedts
       - run: cargo run -p embedts-builder --locked --offline --example export-dangoos -- ../artifacts/dangoos-inputs
         working-directory: rust
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: embedts-linux-x64
+          path: rust/target/debug/embedts
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: integration-inputs
+          path: artifacts/
+          if-no-files-found: error
+  typescript:
+    needs: rust
+    runs-on: ubuntu-24.04
+    env:
+      EMBEDTS_BIN: ${{ github.workspace }}/.toolchain/embedts
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            typescript
+            scripts
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version: '24.11.1'
+      - run: npm install --global pnpm@12.14.0 --ignore-scripts --no-audit --no-fund
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: embedts-linux-x64
+          path: .toolchain
+      - run: chmod +x .toolchain/embedts
+      - run: pnpm -C typescript install --frozen-lockfile --ignore-scripts
+      - name: Check TypeScript with the prebuilt compiler
+        run: |
+          test ! -d rust
+          pnpm -C typescript test
+          pnpm -C typescript typecheck
+          pnpm -C typescript check:apps
+      - name: Check standalone distribution installation
+        run: |
+          python3 scripts/package_toolchain.py --binary .toolchain/embedts --out artifacts/distribution
+          mkdir -p artifacts/packages
+          pnpm -C typescript/packages/builder pack --pack-destination ../../../artifacts/packages
+          pnpm -C typescript/packages/sdk pack --pack-destination ../../../artifacts/packages
+          python3 scripts/check_distribution.py --distribution artifacts/distribution --packages artifacts/packages --receipt artifacts/distribution-check.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: embedts-verified-linux-x64
+          path: artifacts/
+          if-no-files-found: error

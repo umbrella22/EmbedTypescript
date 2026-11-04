@@ -279,7 +279,7 @@ def save_report(output, report):
 def environment():
     info = {"system": platform.platform(), "machine": platform.machine(), "processor": platform.processor(),
             "utc": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            "rust": subprocess.check_output(["rustc", "-Vv"], cwd=REPO, text=True).strip(),
+            "rust": subprocess.check_output(["rustc", "-Vv"], cwd=RUST, text=True).strip(),
             "git_head": subprocess.run(["git", "rev-parse", "HEAD"], cwd=REPO, text=True, capture_output=True).stdout.strip() or "uncommitted",
             "git_status": subprocess.check_output(["git", "status", "--porcelain"], cwd=REPO, text=True),
             "release": True, "jit": False, "thermal_control": "uncontrolled", "clock_control": "uncontrolled"}
@@ -288,9 +288,9 @@ def environment():
     sources = {}
     for root in ("rust/engine", "rust/builder", "typescript/packages/sdk", "tests/integration/benchmarks"):
         for path in sorted((REPO / root).rglob("*")):
-            if path.is_file() and not any(p in ("node_modules", "target") for p in path.relative_to(REPO / root).parts):
+            if path.is_file() and not any(p in ("node_modules", "target", "__pycache__") for p in path.relative_to(REPO / root).parts):
                 sources[path.relative_to(REPO).as_posix()] = sha(path)
-    sources["Cargo.lock"] = sha(REPO / "Cargo.lock")
+    sources["rust/Cargo.lock"] = sha(RUST / "Cargo.lock")
     if DANGO_REPO is not None:
         info["dangoos_git_head"] = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=DANGO_REPO, text=True).strip()
         info["dangoos_git_status"] = subprocess.check_output(["git", "status", "--porcelain"], cwd=DANGO_REPO, text=True)

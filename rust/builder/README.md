@@ -21,7 +21,7 @@ Rolldown 负责模块打包；语义与类型相关规则由 tsrs 执行。
 
 ## 使用
 
-需要`rust/` 工作区的 `rust-toolchain.toml` 指定的 Rust。首次获取依赖后可离线构建：
+需要 `rust/` 工作区的 `rust-toolchain.toml` 指定的 Rust。首次获取依赖后可离线构建：
 
 ```sh
 cd rust
@@ -40,10 +40,11 @@ cargo run -p embedts-builder --locked --offline -- --version
 CLI 内置编译配置与 TypeScript 标准库；SDK 和本地包导出从输入上级的 `embedts.workspace.json` 读取。`sdk` 是 SDK 源码目录，`--sdk SDK_DIR` 可显式覆盖。SDK 包的 `embedts.hostAbi` 必须与构建器一致。
 原生二进制与所选 SDK 可复制到独立工程，编译过程不调用 Node 或 Cargo。固件只消费预编译输入。
 
-pnpm 工作区为编辑器链接包名，并提供调用 Cargo 的 shell 启动器：
+`typescript/` pnpm 工作区为编辑器链接包名，并提供校验、安装与调用原生二进制的命令入口。以下命令从仓库根目录执行：
 
 ```sh
 pnpm -C typescript install --frozen-lockfile --ignore-scripts
+pnpm -C typescript toolchain:build
 pnpm -C typescript typecheck
 pnpm -C typescript check:apps
 pnpm -C typescript --filter @dango-apps/snake build

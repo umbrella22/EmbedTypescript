@@ -18,11 +18,9 @@ def main():
     args = parser.parse_args()
     output = args.output.absolute()
     if output.exists(): raise ValueError(f"output already exists: {output}")
-    compiler = args.compiler.resolve() if args.compiler else ROOT / "rust/target/debug/embedts"
-    if not args.compiler:
-        subprocess.run(["cargo", "build", "-p", "embedts-builder", "--locked", "--offline"], cwd=ROOT / "rust", check=True)
-        metadata = subprocess.check_output(["cargo", "metadata", "--format-version=1", "--no-deps", "--locked", "--offline"], cwd=ROOT / "rust")
-        compiler = Path(json.loads(metadata)["target_directory"]) / "debug/embedts"
+    compiler = args.compiler.resolve() if args.compiler else Path(subprocess.check_output(
+        ["node", str(ROOT / "typescript/packages/builder/bin/toolchain.mjs"), "path"],
+        cwd=ROOT / "typescript", text=True).strip())
     manifests = [args.app.resolve() / "launcher.json"] if args.app else sorted((ROOT / "typescript/examples").rglob("launcher.json"))
     manifests = [p for p in manifests if not any(part in ("dist", "node_modules") for part in p.relative_to(ROOT / "typescript/examples").parts)] if not args.app else manifests
     if not manifests: raise ValueError("no example launchers found")
@@ -33,7 +31,7 @@ def main():
         for manifest in manifests:
             with tempfile.TemporaryDirectory(prefix="embedts-app-") as stage:
                 payload = Path(stage) / "payload"
-                subprocess.run([str(compiler), "app", str(manifest.parent), "--out", str(payload)], cwd=ROOT / "rust", check=True)
+                subprocess.run([str(compiler), "app", str(manifest.parent), "--out", str(payload)], cwd=ROOT, check=True)
                 report = json.loads((payload / "build-report.json").read_text())
                 item = report["applications"][0]
                 item["sdk"] = report["sdk"]

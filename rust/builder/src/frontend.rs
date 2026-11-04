@@ -90,8 +90,8 @@ fn emit_in_region(workspace: &Workspace, input: &Path, temporary: &Path, out: &P
         .iter()
         .map(|(name, file)| (name.clone(), json!([file])))
         .collect();
-    let mut files = vec![input.to_path_buf()];
-    files.extend(workspace.native.iter().cloned());
+    let mut files = workspace.sdk_files.clone();
+    files.push(input.to_path_buf());
     std::fs::write(
         &config,
         serde_json::to_vec(&json!({

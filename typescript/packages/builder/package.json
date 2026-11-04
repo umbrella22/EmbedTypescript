@@ -3,9 +3,20 @@
   "private": true,
   "version": "0.2.0",
   "bin": {
-    "embedts": "bin/embedts"
+    "embedts": "bin/embedts.mjs",
+    "embedts-toolchain": "bin/toolchain.mjs"
   },
   "scripts": {
-    "check": "./bin/embedts --version"
-  }
+    "test": "node --test test/*.test.mjs"
+  },
+  "type": "module",
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=24.11.1"
+  },
+  "license": "MIT"
 }

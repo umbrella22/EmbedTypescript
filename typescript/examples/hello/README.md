@@ -8,7 +8,7 @@
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @dango-examples/ts-hello check
 pnpm --filter @dango-examples/ts-hello build
-cargo run -p embedts-engine --example run -- examples/hello/dist/ts-hello/scripts/main.etb
+(cd rust && cargo run -p embedts-engine --example run -- ../typescript/examples/hello/dist/ts-hello/scripts/main.etb)
 (cd ../esp-32 && cargo fw-ts)
 ```
 

@@ -156,3 +156,38 @@ fn an_application_entry_inside_selected_sdk_api_keeps_application_rules() {
         .unwrap_err()
         .contains("type assertions"));
 }
+
+#[test]
+fn sdk_typescript_installed_under_node_modules_is_emitted() {
+    let root = tempfile::tempdir().unwrap();
+    let original = sdk(root.path(), embedts_engine::HOST_ABI);
+    let installed = root.path().join("node_modules/@dango/sdk");
+    fs::create_dir_all(installed.parent().unwrap()).unwrap();
+    fs::rename(original.sdk.unwrap(), &installed).unwrap();
+    fs::write(
+        installed.join("src/api/internal.ts"),
+        "export function internal():number{return 7 as number;}",
+    )
+    .unwrap();
+    fs::write(
+        installed.join("src/api/system.ts"),
+        "import {internal} from './internal.js';export function value():number{return internal();}",
+    )
+    .unwrap();
+    let entry = root.path().join("main.ts");
+    fs::write(
+        &entry,
+        "import {value} from '@dango/sdk/system';export function main():number{return value();}",
+    )
+    .unwrap();
+    let output = root.path().join("main.etb");
+    build_with_options(
+        entry,
+        &output,
+        &BuildOptions {
+            sdk: Some(installed),
+        },
+    )
+    .unwrap();
+    embedts_engine::Package::parse(&fs::read(output).unwrap()).unwrap();
+}

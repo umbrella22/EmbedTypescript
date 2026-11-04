@@ -19,5 +19,6 @@
   },
   "embedts": {
     "hostAbi": 3
-  }
+  },
+  "license": "MIT"
 }

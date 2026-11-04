@@ -30,6 +30,10 @@ fn resources(source: &Path, relative: &Path, destination: &Path) -> Result<()> {
             text.as_ref(),
             "launcher.json"
                 | "package.json"
+                | "package-lock.json"
+                | "pnpm-lock.yaml"
+                | "pnpm-workspace.yaml"
+                | "yarn.lock"
                 | "tsconfig.json"
                 | "embedts.workspace.json"
                 | "embedts-toolchain.json"
