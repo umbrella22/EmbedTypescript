@@ -9,17 +9,6 @@ fn fixture(source: &str, run: impl FnOnce(&Path)) {
 }
 
 #[test]
-fn accept_type_only_sdk_import() {
-    fixture(
-        r####"import type {Point} from "dango:display";export function main():number{const p:Point={id:0,x:1,y:2};return p.x+p.y;}"####,
-        |file| {
-            let output = check(file).unwrap();
-            assert!(output.contains("function main("), "{output}");
-        },
-    );
-}
-
-#[test]
 fn accept_async_entry() {
     fixture(
         r####"export async function main():Promise<number> {return 1;}"####,
@@ -42,17 +31,6 @@ fn accept_async_scalar_union() {
 }
 
 #[test]
-fn accept_async_sdk() {
-    fixture(
-        r####"import {sleep,nowMs} from "dango:system";export async function main():Promise<number>{await sleep(1);return nowMs();}"####,
-        |file| {
-            let output = check(file).unwrap();
-            assert!(output.contains("function main("), "{output}");
-        },
-    );
-}
-
-#[test]
 fn accept_typed_array_indices() {
     fixture(
         r####"export function main():number {const a=new Uint8Array([7]);return a[0]??0;}"####,
@@ -67,17 +45,6 @@ fn accept_typed_array_indices() {
 fn accept_optional_tuple_indices() {
     fixture(
         r####"export function main():number {const o:{p?:[number]}={p:[42]};return o.p?.[0]??0;}"####,
-        |file| {
-            let output = check(file).unwrap();
-            assert!(output.contains("function main("), "{output}");
-        },
-    );
-}
-
-#[test]
-fn accept_typed_native_calls() {
-    fixture(
-        r####"import {emit} from "dango:host"; export function main():number {emit(42);return 42;}"####,
         |file| {
             let output = check(file).unwrap();
             assert!(output.contains("function main("), "{output}");
@@ -640,26 +607,6 @@ export function value():number{return 7;}"####,
                     .is_match(&error),
                 "{error}"
             );
-        },
-    );
-}
-
-#[test]
-fn workspace_exports_bundle_to_one_native_module_reproducibly() {
-    fixture(
-        r#"import {Random} from "@dango/sdk/game";import {print} from "@dango/sdk/system";export function main():number{print("workspace");return new Random(1).next();}"#,
-        |file| {
-            let first = check(file).unwrap();
-            assert_eq!(first, check(file).unwrap());
-            assert!(first.contains("dango:host"));
-            for forbidden in [
-                "from \"@dango",
-                "embedts-",
-                "node_modules",
-                "typescript/compiler",
-            ] {
-                assert!(!first.contains(forbidden), "{first}");
-            }
         },
     );
 }

@@ -34,7 +34,9 @@ def main():
             with tempfile.TemporaryDirectory(prefix="embedts-app-") as stage:
                 payload = Path(stage) / "payload"
                 subprocess.run([str(compiler), "app", str(manifest.parent), "--out", str(payload)], cwd=ROOT / "rust", check=True)
-                item = json.loads((payload / "build-report.json").read_text())["applications"][0]
+                report = json.loads((payload / "build-report.json").read_text())
+                item = report["applications"][0]
+                item["sdk"] = report["sdk"]
                 identity = item["id"]
                 if identity in identities: raise ValueError(f"duplicate application id: {identity}")
                 identities.add(identity)
@@ -49,7 +51,7 @@ def main():
                 item["source"] = str(manifest.parent) if args.app else manifest.parent.relative_to(ROOT).as_posix()
                 item["directory"] = relative.as_posix()
                 reports.append(item)
-        (temporary / "build-report.json").write_text(json.dumps({"engine":"embedts","applications":reports},indent=2)+"\n")
+        (temporary / "build-report.json").write_text(json.dumps({"engine":"embedts","toolchain":json.loads(subprocess.check_output([str(compiler), "--version"])),"applications":reports},indent=2)+"\n")
         os.rename(temporary, output)
     except BaseException:
         shutil.rmtree(temporary)

@@ -75,7 +75,11 @@ fn main() -> Result<(), String> {
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect::<String>();
-    let manifest = json!({"format":"embedts-artifacts-v1","producer":"embedts-builder","version":env!("CARGO_PKG_VERSION"),"typescript":embedts_builder::TYPESCRIPT_VERSION,"tsrs_commit":embedts_builder::TSRS_COMMIT,"engine_id":engine_id,"host_abi":embedts_engine::HOST_ABI,"artifacts":artifacts});
+    let sdk: Value = serde_json::from_slice(
+        &fs::read(root.join("typescript/packages/sdk/package.json")).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    let manifest = json!({"toolchain":embedts_builder::toolchain_identity(), "sdk":{"name":sdk["name"],"version":sdk["version"],"host_abi":sdk["embedts"]["hostAbi"]}, "format":"embedts-artifacts-v1","producer":"embedts-builder","version":env!("CARGO_PKG_VERSION"),"typescript":embedts_builder::TYPESCRIPT_VERSION,"tsrs_commit":embedts_builder::TSRS_COMMIT,"engine_id":engine_id,"host_abi":embedts_engine::HOST_ABI,"artifacts":artifacts});
     fs::write(
         temporary.path().join("manifest.json"),
         format!("{}\n", serde_json::to_string_pretty(&manifest).unwrap()),

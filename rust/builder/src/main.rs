@@ -1,28 +1,48 @@
-use std::{path::Path, process::ExitCode};
+use embedts_builder::BuildOptions;
+use std::{
+    path::{Path, PathBuf},
+    process::ExitCode,
+};
+
+const USAGE: &str = "usage: embedts check INPUT.ts [--sdk SDK_DIR] | build INPUT.ts --out OUTPUT.etb [--sdk SDK_DIR] | app SOURCE --out NEW_DIRECTORY [--sdk SDK_DIR] | --version";
 
 fn run() -> embedts_builder::Result<()> {
-    let args: Vec<_> = std::env::args_os().skip(1).collect();
+    let mut args: Vec<_> = std::env::args_os().skip(1).collect();
     if args.len() == 1 && args[0] == "--version" {
-        println!(
-            "{}",
-            serde_json::json!({"name":"embedts", "version":env!("CARGO_PKG_VERSION"), "tsrs":embedts_builder::TSRS_VERSION,"tsrs_commit":embedts_builder::TSRS_COMMIT,"typescript":embedts_builder::TYPESCRIPT_VERSION,"typescript_commit":embedts_builder::TYPESCRIPT_COMMIT,"bundler":{"name":"rolldown","version":embedts_builder::ROLLDOWN_VERSION},"implementation":"rust","bytecode":{"name":"EmbedTS Bytecode","extension":".etb","version":1,"engine_id":embedts_engine::ENGINE_ID.iter().map(|b|format!("{b:02x}")).collect::<String>(),"host_abi":embedts_engine::HOST_ABI}})
-        );
+        println!("{}", embedts_builder::toolchain_identity());
         return Ok(());
+    }
+    if args.len() == 1 && matches!(args[0].to_str(), Some("--help" | "-h")) {
+        println!("{USAGE}");
+        return Ok(());
+    }
+    let mut options = BuildOptions::default();
+    while let Some(index) = args.iter().position(|a| a == "--sdk") {
+        if options.sdk.is_some() || index + 1 >= args.len() {
+            return Err("--sdk requires exactly one SDK directory".into());
+        }
+        args.remove(index);
+        options.sdk = Some(PathBuf::from(args.remove(index)));
     }
     match args.as_slice() {
         [command, input] if command == "check" => {
-            embedts_builder::check(Path::new(input))?;
+            embedts_builder::check_with_options(Path::new(input), &options)?;
             println!("{}: checks passed", Path::new(input).display());
         }
         [command, input, flag, output] if command == "build" && flag == "--out" => {
-            let count = embedts_builder::build(Path::new(input), Path::new(output))?;
+            let count =
+                embedts_builder::build_with_options(Path::new(input), Path::new(output), &options)?;
             println!("{count} bytes -> {}", Path::new(output).display());
         }
         [command, source, flag, output] if command == "app" && flag == "--out" => {
-            embedts_builder::build_app(Path::new(source), Path::new(output))?;
+            embedts_builder::build_app_with_options(
+                Path::new(source),
+                Path::new(output),
+                &options,
+            )?;
             println!("application -> {}", Path::new(output).display());
         }
-        _ => return Err("usage: embedts check INPUT.ts | build INPUT.ts --out OUTPUT.etb | app SOURCE --out NEW_DIRECTORY | --version".into()),
+        _ => return Err(USAGE.into()),
     }
     Ok(())
 }

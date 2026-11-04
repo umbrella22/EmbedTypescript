@@ -1,7 +1,7 @@
 {
   "name": "@dango/sdk",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "exports": {
     "./system": "./src/api/system.ts",
@@ -16,5 +16,8 @@
     "./default-brain": "./src/api/default-brain.ts",
     "./native": "./src/api/dango.d.ts",
     "./game": "./src/helpers/game.ts"
+  },
+  "embedts": {
+    "hostAbi": 3
   }
 }

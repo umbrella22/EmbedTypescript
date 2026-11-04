@@ -1,4 +1,5 @@
 {
+  "sdk": "typescript/packages/sdk",
   "packages": [
     "typescript/examples/games/2048",
     "typescript/examples/games/dino",

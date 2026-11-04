@@ -90,12 +90,14 @@ fn emit_in_region(workspace: &Workspace, input: &Path, temporary: &Path, out: &P
         .iter()
         .map(|(name, file)| (name.clone(), json!([file])))
         .collect();
+    let mut files = vec![input.to_path_buf()];
+    files.extend(workspace.native.iter().cloned());
     std::fs::write(
         &config,
         serde_json::to_vec(&json!({
             "extends": workspace.root.join("tsconfig.base.json"),
             "compilerOptions": {"rootDir": source_root, "outDir": out, "paths": paths},
-            "files": [input, workspace.api.join("dango.d.ts")]
+            "files": files
         }))
         .map_err(|e| e.to_string())?,
     )

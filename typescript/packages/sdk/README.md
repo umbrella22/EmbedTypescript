@@ -70,7 +70,7 @@ flag 更新。每个数组元素按上述字段顺序展开为原生命令，元
 ## 工作区与编译
 
 包通过`typescript/` pnpm workspace 链接，公开入口由 `package.json` 的 `exports` 定义。
-编译器读取相同导出表，原生 Cargo 编译也可以解析这些入口。正式应用不需要通过
+构建器在编译应用时读取相同导出表。项目的 `embedts.workspace.json` 使用 `sdk` 选择本包；`--sdk SDK_DIR` 可显式指定。包的 `embedts.hostAbi` 必须匹配构建器。Rust 构建过程不嵌入 SDK，源码更新在下一次应用编译生效。正式应用不需要通过
 相对路径引用 SDK 或编译工具。已有独立客户端的 `dango:*` 平台别名继续解析到
 同一份 API 代码。
 

@@ -53,7 +53,8 @@ pub(crate) fn check(
 ) -> Result<()> {
     for &file in program.source_files() {
         if program.is_source_file_default_library(file.path())
-            || Path::new(file.file_name()).starts_with(&workspace.api)
+            || (Path::new(file.file_name()) != input
+                && workspace.is_sdk_api(Path::new(file.file_name())))
         {
             continue;
         }

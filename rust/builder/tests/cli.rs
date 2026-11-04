@@ -107,13 +107,13 @@ fn app_uses_launcher_identity_and_publishes_only_successful_payloads() {
 }
 
 #[test]
-fn copied_native_cli_builds_sdk_app_without_the_checkout_or_node() {
+fn copied_native_cli_builds_pure_ts_without_the_checkout_or_node() {
     let root = tempfile::tempdir().unwrap();
     let binary = root.path().join("embedts");
     fs::copy(env!("CARGO_BIN_EXE_embedts"), &binary).unwrap();
     fs::write(
         root.path().join("main.ts"),
-        "import {nowMs} from '@dango/sdk/system';export function main():number{return nowMs();}",
+        "export function main():number{return 42;}",
     )
     .unwrap();
     let result = Command::new(&binary)

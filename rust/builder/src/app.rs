@@ -1,4 +1,4 @@
-use crate::{build, Result};
+use crate::{compile_module, toolchain_identity, write_package, BuildOptions, Result};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::path::{Component, Path};
@@ -28,7 +28,11 @@ fn resources(source: &Path, relative: &Path, destination: &Path) -> Result<()> {
         }
         if matches!(
             text.as_ref(),
-            "launcher.json" | "package.json" | "tsconfig.json"
+            "launcher.json"
+                | "package.json"
+                | "tsconfig.json"
+                | "embedts.workspace.json"
+                | "embedts-toolchain.json"
         ) || item
             .path()
             .extension()
@@ -46,6 +50,14 @@ fn resources(source: &Path, relative: &Path, destination: &Path) -> Result<()> {
 /// Assemble one TS application into a new directory, publishing only after success.
 /// The launcher ID controls the installed identity independently of the source folder name.
 pub fn build_app(source: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<()> {
+    build_app_with_options(source, output, &BuildOptions::default())
+}
+
+pub fn build_app_with_options(
+    source: impl AsRef<Path>,
+    output: impl AsRef<Path>,
+    options: &BuildOptions,
+) -> Result<()> {
     let source = source.as_ref().canonicalize().map_err(|e| e.to_string())?;
     let output = std::path::absolute(output).map_err(|e| e.to_string())?;
     if output.exists() {
@@ -93,7 +105,8 @@ pub fn build_app(source: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<(
     std::fs::create_dir(&destination).map_err(|e| e.to_string())?;
     resources(&source, Path::new(""), &destination)?;
     let compiled_entry = entry.with_extension("etb");
-    build(source.join(&entry), destination.join(&compiled_entry))?;
+    let compiled = compile_module(&source.join(&entry), options)?;
+    write_package(&compiled.bytes, &destination.join(&compiled_entry))?;
     manifest["entry"] = json!(compiled_entry.to_string_lossy().replace('\\', "/"));
     std::fs::write(
         destination.join("launcher.json"),
@@ -104,7 +117,7 @@ pub fn build_app(source: impl AsRef<Path>, output: impl AsRef<Path>) -> Result<(
     )
     .map_err(|e| e.to_string())?;
     let bytes = std::fs::read(destination.join(&compiled_entry)).map_err(|e| e.to_string())?;
-    let report = json!({"engine":"ts", "applications":[{"id":identity,"source":source,"entry":manifest["entry"],"bytes":bytes.len(),"sha256":format!("{:x}", Sha256::digest(&bytes))}]});
+    let report = json!({"engine":"ts", "toolchain":toolchain_identity(), "sdk":compiled.sdk, "applications":[{"id":identity,"source":source,"entry":manifest["entry"],"bytes":bytes.len(),"sha256":format!("{:x}", Sha256::digest(&bytes))}]});
     std::fs::write(
         temporary.path().join("build-report.json"),
         format!(

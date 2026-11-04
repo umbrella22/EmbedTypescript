@@ -29,11 +29,11 @@ cd ..
 python3 scripts/build_examples.py artifacts/apps
 ```
 
-构建器将 SDK 与标准编译配置嵌入原生二进制，`rust/target/debug/embedts` 复制到其他目录后仍可编译 SDK 应用。`embedts.workspace.json` 显式声明可按包名导入的本地源码包；输入文件的最近上级工作区生效。任意 npm 包尚未纳入运行时子集。
+构建器内置标准编译配置，SDK 是应用编译时读取的显式源码依赖。`embedts.workspace.json` 的 `sdk` 指定 SDK 包目录，也可通过 `--sdk SDK_DIR` 覆盖；SDK 应用离开仓库构建时需要同时提供原生二进制与 SDK 包。`embedts.workspace.json` 显式声明可按包名导入的本地源码包；输入文件的最近上级工作区生效。任意 npm 包尚未纳入运行时子集。
 
 ## SDK 与编辑器
 
-pnpm 工作区提供编辑器包链接和快捷命令。SDK 与应用辅助代码统一位于 `typescript/packages/sdk/`，应用通过 `@dango/sdk/*` 导入。
+`typescript/` pnpm 工作区提供编辑器包链接和快捷命令。SDK 与应用辅助代码统一位于 `typescript/packages/sdk/`，应用通过 `@dango/sdk/*` 导入。
 
 ```sh
 pnpm -C typescript install --frozen-lockfile --ignore-scripts

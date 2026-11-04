@@ -37,8 +37,8 @@ cargo run -p embedts-builder --locked --offline -- --version
 `build` 通过检查后生成字节码，先写临时文件再原子替换；失败保留已有输出。
 `app` 输出 `<id>/` 载荷和 `build-report.json`，目标目录必须尚不存在；
 源码目录名不决定安装身份，最终使用 launcher 中的 ID。
-CLI 内置 SDK 和编译配置；本地包导出从输入上级的 `embedts.workspace.json` 读取。
-原生二进制可独立运行，固件只消费预编译输入。
+CLI 内置编译配置与 TypeScript 标准库；SDK 和本地包导出从输入上级的 `embedts.workspace.json` 读取。`sdk` 是 SDK 源码目录，`--sdk SDK_DIR` 可显式覆盖。SDK 包的 `embedts.hostAbi` 必须与构建器一致。
+原生二进制与所选 SDK 可复制到独立工程，编译过程不调用 Node 或 Cargo。固件只消费预编译输入。
 
 pnpm 工作区为编辑器链接包名，并提供调用 Cargo 的 shell 启动器：
 
@@ -75,7 +75,7 @@ export async function main(): Promise<void> {
 所有传递导入的应用源码都接受相同规则检查。SDK 的 `src/api/` 作为可信宿主适配边界参与 TS 7
 类型检查；`src/helpers/` 接受完整应用子集检查。应用可导入仓库
 `embedts.workspace.json` 声明包的 package.json 中明确导出的 TS 文件；公共代码继续接受应用子集检查。
-任意 npm 依赖尚未开放。SDK 源码位于 `typescript/packages/sdk/`，游戏辅助通过 `@dango/sdk/game` 导出。`dango:*` SDK 名称保留为既有独立客户端的别名。
+任意 npm 依赖尚未开放。SDK 源码位于 `typescript/packages/sdk/`，应用编译时读取，SDK 更新不要求重新编译 Rust 构建器，游戏辅助通过 `@dango/sdk/game` 导出。`dango:*` SDK 名称保留为既有独立客户端的别名。
 
 | 模块 | 接口 |
 | --- | --- |

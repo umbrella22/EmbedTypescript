@@ -1,4 +1,5 @@
 {
+  "sdk": "packages/sdk",
   "packages": [
     "examples/games/2048",
     "examples/games/dino",
