@@ -1,0 +1,6 @@
+packages:
+  - builder
+  - sdk
+  - examples/*
+  - examples/games/*
+  - examples/tools/*

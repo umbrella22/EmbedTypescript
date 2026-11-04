@@ -1,0 +1,12 @@
+{
+  "name": "@embedts/builder",
+  "private": true,
+  "version": "0.1.0",
+  "bin": {
+    "embedts": "bin/embedts"
+  },
+  "scripts": {
+    "test": "cargo test -p embedts-builder --locked",
+    "check": "cargo check -p embedts-builder --locked"
+  }
+}

@@ -1,0 +1,30 @@
+[package]
+name = "embedts-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "Bounded no_std QuickJS-NG bytecode runtime for embedded hosts"
+publish = false
+license = "MIT"
+links = "embedts"
+
+[features]
+default = []
+# Host tools only. Firmware must never enable the source compiler.
+compiler = []
+
+[dependencies]
+serde_json = { version = "1", default-features = false, features = ["alloc"] }
+sha2 = { version = "0.10", default-features = false }
+
+[build-dependencies]
+cc = "1"
+sha2 = "0.10"
+
+[[example]]
+name = "compile"
+required-features = ["compiler"]
+
+[[example]]
+name = "kernel-bench"
+required-features = ["compiler"]

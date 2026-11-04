@@ -1,0 +1,29 @@
+[package]
+name = "embedts-builder"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+description = "TypeScript checker, module bundler and bytecode compiler for embedded hosts"
+publish = false
+rust-version = "1.99"
+
+[[bin]]
+name = "embedts"
+path = "src/main.rs"
+
+[dependencies]
+embedts-engine = { path = "../engine", features = ["compiler"] }
+serde_json = "1"
+tempfile = "3"
+regex = "1"
+sha2 = "0.10"
+rolldown = "=1.2.16"
+rolldown_common = "=1.2.16"
+tokio = { version = "1", features = ["rt-multi-thread"] }
+tsrs_ast = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }
+tsrs_checker = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }
+tsrs_compiler = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }
+tsrs_core = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }
+tsrs_scanner = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }
+tsrs_tsoptions = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }
+tsrs_vfs = { git = "https://github.com/oxc-project/tsrs", rev = "77d3cddb44540734abc33a42ccca4d3f33bee527" }

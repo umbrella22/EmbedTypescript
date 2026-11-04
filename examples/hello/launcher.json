@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "id": "ts-hello",
+  "entry": "scripts/main.ts",
+  "display_name": "TS Hello",
+  "visible": true
+}

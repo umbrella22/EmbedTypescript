@@ -1,0 +1,5 @@
+# Preserve checksum-pinned upstream source bytes and whitespace.
+engine/vendor/quickjs-ng/** -whitespace
+# Unified patches use a single space to represent empty context lines.
+engine/patches/quickjs-ng/*.patch whitespace=-blank-at-eol
+*.etb binary

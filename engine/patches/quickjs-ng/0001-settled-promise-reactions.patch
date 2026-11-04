@@ -1,0 +1,76 @@
+--- a/quickjs.c
++++ b/quickjs.c
+@@ -56560,41 +56560,43 @@
+     JSPromiseReactionData *rd_array[2], *rd;
+     int i, j;
+ 
+-    rd_array[0] = NULL;
+-    rd_array[1] = NULL;
+-    for(i = 0; i < 2; i++) {
+-        JSValueConst handler;
+-        rd = js_mallocz(ctx, sizeof(*rd));
+-        if (!rd) {
+-            if (i == 1)
+-                promise_reaction_data_free(ctx->rt, rd_array[0]);
+-            return -1;
+-        }
+-        for(j = 0; j < 2; j++)
+-            rd->resolving_funcs[j] = js_dup(cap_resolving_funcs[j]);
++    if (s->promise_state == JS_PROMISE_PENDING) {
++        rd_array[0] = NULL;
++        rd_array[1] = NULL;
++        for(i = 0; i < 2; i++) {
++            JSValueConst handler;
++            rd = js_mallocz(ctx, sizeof(*rd));
++            if (!rd) {
++                if (i == 1)
++                    promise_reaction_data_free(ctx->rt, rd_array[0]);
++                return -1;
++            }
++            for(j = 0; j < 2; j++)
++                rd->resolving_funcs[j] = js_dup(cap_resolving_funcs[j]);
++            handler = resolve_reject[i];
++            if (!JS_IsFunction(ctx, handler))
++                handler = JS_UNDEFINED;
++            rd->handler = js_dup(handler);
++            rd_array[i] = rd;
++        }
++        for(i = 0; i < 2; i++)
++            list_add_tail(&rd_array[i]->link, &s->promise_reactions[i]);
++    } else {
++        JSValueConst args[5], handler;
++        call_promise_rejection_tracker(ctx, promise, true);
++        i = s->promise_state - JS_PROMISE_FULFILLED;
+         handler = resolve_reject[i];
+         if (!JS_IsFunction(ctx, handler))
+             handler = JS_UNDEFINED;
+-        rd->handler = js_dup(handler);
+-        rd_array[i] = rd;
+-    }
+-
+-    if (s->promise_state == JS_PROMISE_PENDING) {
+-        for(i = 0; i < 2; i++)
+-            list_add_tail(&rd_array[i]->link, &s->promise_reactions[i]);
+-    } else {
+-        JSValueConst args[5];
+-        call_promise_rejection_tracker(ctx, promise, true);
+-        i = s->promise_state - JS_PROMISE_FULFILLED;
+-        rd = rd_array[i];
+-        args[0] = rd->resolving_funcs[0];
+-        args[1] = rd->resolving_funcs[1];
+-        args[2] = rd->handler;
++        /* The queued job retains its arguments. Settled promises do not need
++           pending reaction records, including their unused opposite handler. */
++        args[0] = cap_resolving_funcs[0];
++        args[1] = cap_resolving_funcs[1];
++        args[2] = handler;
+         args[3] = js_bool(i);
+         args[4] = s->promise_result;
+-        JS_EnqueueJob(ctx, promise_reaction_job, 5, args);
+-        for(i = 0; i < 2; i++)
+-            promise_reaction_data_free(ctx->rt, rd_array[i]);
++        if (JS_EnqueueJob(ctx, promise_reaction_job, 5, args) < 0)
++            return -1;
+     }
+     s->is_handled = true;
+     return 0;

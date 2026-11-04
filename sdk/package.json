@@ -1,0 +1,20 @@
+{
+  "name": "@dango/sdk",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    "./system": "./src/api/system.ts",
+    "./hardware": "./src/api/hardware.ts",
+    "./storage": "./src/api/storage.ts",
+    "./ui": "./src/api/ui.ts",
+    "./schema": "./src/api/schema.ts",
+    "./display": "./src/api/display.ts",
+    "./image": "./src/api/image.ts",
+    "./thread": "./src/api/thread.ts",
+    "./brain": "./src/api/brain.ts",
+    "./default-brain": "./src/api/default-brain.ts",
+    "./native": "./src/api/dango.d.ts",
+    "./game": "./src/helpers/game.ts"
+  }
+}

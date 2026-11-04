@@ -1,0 +1,72 @@
+--- a/quickjs.c
++++ b/quickjs.c
+@@ -1643,6 +1643,42 @@
+     return true;
+ }
+ 
++/* A binary64 safe integer can be reduced exactly using its significand.
++   Fractional, non-finite and larger operands keep the general fmod path. */
++static bool js_float64_mod_int32(JSValue dividend, int32_t divisor,
++                               JSValue *result)
++{
++    JSFloat64Union u;
++    uint64_t significand, magnitude;
++    uint32_t exponent, modulus, remainder;
++    unsigned shift;
++    bool negative;
++
++    if (divisor == 0)
++        return false;
++    u.d = JS_VALUE_GET_FLOAT64(dividend);
++    exponent = (u.u64 >> 52) & 0x7ff;
++    if (exponent < 1023 || exponent > 1075)
++        return false;
++    shift = 1075 - exponent;
++    significand = (u.u64 & ((UINT64_C(1) << 52) - 1)) |
++                  (UINT64_C(1) << 52);
++    if (significand & ((UINT64_C(1) << shift) - 1))
++        return false;
++    magnitude = significand >> shift;
++    modulus = divisor < 0 ? 0U - (uint32_t)divisor : (uint32_t)divisor;
++    if (magnitude <= UINT32_MAX)
++        remainder = (uint32_t)magnitude % modulus;
++    else
++        remainder = magnitude % modulus;
++    negative = (u.u64 >> 63) != 0;
++    if (negative && remainder == 0)
++        *result = js_float64(-0.0);
++    else
++        *result = js_int32(negative ? -(int32_t)remainder : (int32_t)remainder);
++    return true;
++}
++
+ static JSValue __JS_NewShortBigInt(JSContext *ctx, int32_t d)
+ {
+     (void)&ctx;
+@@ -20322,12 +20358,20 @@
+                     int v1, v2, r;
+                     v1 = JS_VALUE_GET_INT(op1);
+                     v2 = JS_VALUE_GET_INT(op2);
+-                    /* We must avoid v2 = 0, v1 = INT32_MIN and v2 =
+-                       -1 and the cases where the result is -0. */
+-                    if (unlikely(v1 < 0 || v2 <= 0))
+-                        goto binary_arith_slow;
+-                    r = v1 % v2;
+-                    sp[-2] = js_int32(r);
++                    if (unlikely(v1 < 0 || v2 <= 0)) {
++                        if (v2 == 0)
++                            goto binary_arith_slow;
++                        /* Avoid C's INT32_MIN / -1 overflow and preserve -0. */
++                        r = (v1 == INT32_MIN && v2 == -1) ? 0 : v1 % v2;
++                        sp[-2] = v1 < 0 && r == 0 ? js_float64(-0.0) : js_int32(r);
++                    } else {
++                        r = v1 % v2;
++                        sp[-2] = js_int32(r);
++                    }
++                    sp--;
++                } else if (JS_TAG_IS_FLOAT64(JS_VALUE_GET_TAG(op1)) &&
++                           JS_VALUE_GET_TAG(op2) == JS_TAG_INT &&
++                           js_float64_mod_int32(op1, JS_VALUE_GET_INT(op2), &sp[-2])) {
+                     sp--;
+                 } else {
+                     goto binary_arith_slow;

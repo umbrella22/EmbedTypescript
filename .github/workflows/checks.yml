@@ -1,0 +1,24 @@
+name: EmbedTS
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  standalone:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f
+        with:
+          node-version: '24.11.1'
+      - name: Install pinned tools
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$version" --profile minimal --component rustfmt
+          npm install --global pnpm@12.14.0 --ignore-scripts --no-audit --no-fund
+      - run: cargo fetch --locked
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - run: ./scripts/check.sh
+      - run: python3 scripts/build_examples.py target/apps
+      - run: cargo run -p embedts-builder --locked --offline --example export-dangoos -- target/dangoos-inputs

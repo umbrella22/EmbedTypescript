@@ -1,0 +1,10 @@
+{
+  "suite": "script-engines-v1",
+  "cases": ["integer", "mandelbrot", "primes", "matrix", "sort", "objects"],
+  "profiles": {
+    "smoke": {"units": [8, 64, 32, 24, 8, 8], "samples": 1, "yield_every": 1},
+    "device-quick": {"units": [32, 256, 128, 96, 32, 32], "samples": 5, "yield_every": 1},
+    "device": {"units": [2048, 8192, 2048, 768, 512, 512], "samples": 5, "yield_every": 1},
+    "host": {"units": [65536, 65536, 16384, 32768, 8192, 8192], "samples": 5, "yield_every": 32}
+  }
+}

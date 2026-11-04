@@ -1,0 +1,16 @@
+{
+  "name": "@dango-examples/ts-hello",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "check": "embedts check scripts/main.ts",
+    "build": "embedts app . --out dist"
+  },
+  "dependencies": {
+    "@dango/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@embedts/builder": "workspace:*"
+  }
+}
