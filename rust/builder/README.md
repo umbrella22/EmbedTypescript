@@ -21,14 +21,15 @@ Rolldown 负责模块打包；语义与类型相关规则由 tsrs 执行。
 
 ## 使用
 
-需要根 `rust-toolchain.toml` 指定的 Rust。首次获取依赖后可离线构建：
+需要`rust/` 工作区的 `rust-toolchain.toml` 指定的 Rust。首次获取依赖后可离线构建：
 
 ```sh
+cd rust
 cargo fetch --locked
-cargo run -p embedts-builder --locked --offline -- check examples/system-demo/scripts/main.ts
-cargo run -p embedts-builder --locked --offline -- build examples/hello/scripts/main.ts --out target/hello.etb
+cargo run -p embedts-builder --locked --offline -- check ../typescript/examples/system-demo/scripts/main.ts
+cargo run -p embedts-builder --locked --offline -- build ../typescript/examples/hello/scripts/main.ts --out target/hello.etb
 cargo run -p embedts-engine --example run --locked --offline -- target/hello.etb
-cargo run -p embedts-builder --locked --offline -- app examples/games/snake --out target/snake-ts
+cargo run -p embedts-builder --locked --offline -- app ../typescript/examples/games/snake --out target/snake-ts
 cargo run -p embedts-builder --locked --offline -- --version
 ```
 
@@ -42,10 +43,10 @@ CLI 内置 SDK 和编译配置；本地包导出从输入上级的 `embedts.work
 pnpm 工作区为编辑器链接包名，并提供调用 Cargo 的 shell 启动器：
 
 ```sh
-pnpm install --frozen-lockfile --ignore-scripts
-pnpm typecheck
-pnpm check:apps
-pnpm --filter @dango-apps/snake build
+pnpm -C typescript install --frozen-lockfile --ignore-scripts
+pnpm -C typescript typecheck
+pnpm -C typescript check:apps
+pnpm -C typescript --filter @dango-apps/snake build
 ```
 
 `pnpm typecheck` 使用固定上游 tsrs CLI；正式设备包始终由 Rust 编译器生成。
@@ -74,7 +75,7 @@ export async function main(): Promise<void> {
 所有传递导入的应用源码都接受相同规则检查。SDK 的 `src/api/` 作为可信宿主适配边界参与 TS 7
 类型检查；`src/helpers/` 接受完整应用子集检查。应用可导入仓库
 `embedts.workspace.json` 声明包的 package.json 中明确导出的 TS 文件；公共代码继续接受应用子集检查。
-任意 npm 依赖尚未开放。SDK 源码位于 `sdk/`，游戏辅助通过 `@dango/sdk/game` 导出。`dango:*` SDK 名称保留为既有独立客户端的别名。
+任意 npm 依赖尚未开放。SDK 源码位于 `typescript/packages/sdk/`，游戏辅助通过 `@dango/sdk/game` 导出。`dango:*` SDK 名称保留为既有独立客户端的别名。
 
 | 模块 | 接口 |
 | --- | --- |
@@ -87,7 +88,7 @@ export async function main(): Promise<void> {
 | `@dango/sdk/thread` | 独立字节码 worker、参数、名称/互斥组/替换、停止/状态、二进制队列、信号量和归属锁 |
 | `@dango/sdk/schema` | int/bool/object 参数默认值和边界 |
 | `@dango/sdk/brain` | 受限常驻 VM 的输入、响应、表情、动画、触觉、视觉、命令和 LED |
-| `dango:host` | 数值时钟/延时/绘图，以及按值、二进制、组合或 void 返回的同步/异步传输；详见[宿主 ABI](../docs/host-abi.md) |
+| `dango:host` | 数值时钟/延时/绘图，以及按值、二进制、组合或 void 返回的同步/异步传输；详见[宿主 ABI](../../docs/host-abi.md) |
 
 `system.isHostError(error)` 将捕获值缩小到带数值 `code` 的服务错误。普通服务失败
 可以捕获；执行超时、引擎 OOM 和内部宿主故障终止实例。TS 存储的相对路径从
@@ -112,7 +113,7 @@ async/await 及受限内建对象。构建拒绝：
 
 TypeScript 7 的版本升级没有扩大设备 intrinsic 集合。上述规则定义开发子集，不能
 验证敌对字节码的安全性。历史能力对齐记录见
-[对齐矩阵](../docs/history/ts-engine-parity.md)。
+[对齐矩阵](../../docs/history/ts-engine-parity.md)。
 
 ```sh
 pnpm check
@@ -132,4 +133,4 @@ VFS，文件字节留在宿主，JS 只取得图像/字体句柄或完成回执�
 持久选择与 Lua 文件分别保存。`brain-default` 恢复内置 TS 行为，故障回退到原生行为。
 
 应用集使用 `python3 scripts/build_examples.py target/apps` 生成。
-设备验证探针源码位于 `tests/device/ts-parity/`，不进入正式应用集。
+设备验证探针源码位于 `tests/integration/device/ts-parity/`，不进入正式应用集。

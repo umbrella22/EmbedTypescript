@@ -17,7 +17,8 @@ import uuid
 from reference import CASES, expected
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[1]
+REPO = HERE.parents[2]
+RUST = REPO / "rust"
 DANGO_REPO = None
 PREFIX = "DANGO_BENCH "
 SUITE = json.loads((HERE / "suite.json").read_text())
@@ -55,7 +56,7 @@ def command(args, log, cwd=None):
         subprocess.run(list(map(str, args)), cwd=cwd or REPO, stdout=stream, stderr=subprocess.STDOUT, check=True)
 
 
-def target_dir(repo=REPO):
+def target_dir(repo=RUST):
     raw = subprocess.check_output(["cargo", "metadata", "--format-version=1", "--no-deps", "--offline"], cwd=repo)
     return Path(json.loads(raw)["target_directory"])
 
@@ -63,7 +64,7 @@ def target_dir(repo=REPO):
 def build(output, profile, samples=None):
     output.mkdir(parents=True, exist_ok=False)
     log = output / "build.log"
-    command(["cargo", "build", "-p", "embedts-builder", "--locked", "--offline"], log)
+    command(["cargo", "build", "-p", "embedts-builder", "--locked", "--offline"], log, cwd=RUST)
     command(["cargo", "build", "-p", "app-pack", "--locked", "--offline"], log, cwd=DANGO_REPO)
     target = target_dir()
     applications = {}
@@ -86,7 +87,7 @@ def build(output, profile, samples=None):
                                 "sha256": sha(app / entry), "args": args}
     receipt = {"status": "built", "profile": profile, "fingerprint": fingerprint(), "sources": source_receipt(),
                "compiler": json.loads(subprocess.check_output([target / "debug/embedts", "--version"], cwd=REPO)),
-               "quickjs": json.loads((REPO / "engine/vendor/quickjs-ng.json").read_text())["commit"],
+               "quickjs": json.loads((REPO / "rust/engine/vendor/quickjs-ng.json").read_text())["commit"],
                "applications": applications, "device_executed": False}
     write_json(output / "build.json", receipt)
     return receipt
@@ -285,7 +286,7 @@ def environment():
     if sys.platform == "darwin":
         info["cpu"] = subprocess.check_output(["sysctl", "-n", "machdep.cpu.brand_string"], text=True).strip()
     sources = {}
-    for root in ("engine", "builder", "sdk", "tests/benchmarks"):
+    for root in ("rust/engine", "rust/builder", "typescript/packages/sdk", "tests/integration/benchmarks"):
         for path in sorted((REPO / root).rglob("*")):
             if path.is_file() and not any(p in ("node_modules", "target") for p in path.relative_to(REPO / root).parts):
                 sources[path.relative_to(REPO).as_posix()] = sha(path)

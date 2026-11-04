@@ -52,13 +52,13 @@ assert_eq!(stats.used, 0);
 及 Promise 返回值。异步调用使用 `start` 和 `entry_status`，得到 `Missing`、
 `Done(i32)` 或 `Pending`。每个实例同时只允许一个等待中的入口；`drain_jobs` 与
 宿主请求处理可以在等待期间继续推进。原生传输模式、时钟、数值延时与绘图接口见
-[宿主 ABI](../docs/host-abi.md)。
+[宿主 ABI](../../docs/host-abi.md)。
 
 OS 前台任务先调用 `main()`，随后每约 20 ms 调用可选 `onTick(at: number)`。
 `at` 是启动后毫秒数的低 32 位，按有符号整数传递；应用需要处理回绕。
 无 `onTick` 的应用在入口完成、Promise jobs 与宿主请求都耗尽后结束。异步 `main`
 完成后才开始 `onTick`；等待中的 tick 不会重入。系统、服务、硬件、存储与原生 UI
-接口由 [@dango/sdk](../sdk/README.md) 提供。
+接口由 [@dango/sdk](../../typescript/packages/sdk/README.md) 提供。
 
 ## 执行与内存限制
 
@@ -146,4 +146,4 @@ QuickJS bytecode 只能由可信编译器提供，`Vm::load` 因此是 `unsafe` 
 
 ## 验证
 
-`cargo test -p embedts-engine --features compiler --locked` 验证运行时故障、回收、包边界与核补丁。OS 的预编译集成、固件符号隔离及上机证据在消费端分别验证。接入边界见 [架构](../docs/architecture.md)。
+`cargo test -p embedts-engine --features compiler --locked` 验证运行时故障、回收、包边界与核补丁。OS 的预编译集成、固件符号隔离及上机证据在消费端分别验证。接入边界见 [架构](../../docs/architecture.md)。

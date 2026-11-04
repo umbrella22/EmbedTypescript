@@ -26,19 +26,20 @@ fn files(root: &Path, path: &Path, output: &mut String) {
     }
 }
 fn main() {
-    let root = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap()).join("..");
+    let root = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap())
+        .join("../../typescript/packages");
     let mut output = String::from("const SDK_FILES: &[(&str, &str)] = &[\n");
     files(&root, &root.join("sdk"), &mut output);
     output.push_str("];\n");
     output.push_str(&format!(
         "const TSCONFIG: &str = include_str!({:?});\n",
-        root.join("tsconfig.base.json").canonicalize().unwrap()
+        root.join("../tsconfig.base.json").canonicalize().unwrap()
     ));
     fs::write(
         PathBuf::from(std::env::var_os("OUT_DIR").unwrap()).join("sdk.rs"),
         output,
     )
     .unwrap();
-    println!("cargo:rerun-if-changed=../sdk");
-    println!("cargo:rerun-if-changed=../tsconfig.base.json");
+    println!("cargo:rerun-if-changed=../../typescript/packages/sdk");
+    println!("cargo:rerun-if-changed=../../typescript/tsconfig.base.json");
 }

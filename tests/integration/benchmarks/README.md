@@ -15,7 +15,7 @@ benchmarks/
   bench.py               本地构建、主机测量、日志比较
   test_protocol.py       证据协议回归
 
-OS 仓库的 tests/benchmarks/script-engines/runner 提供真实宿主测量；build/host 命令通过 --dango-root 显式传入该 checkout。
+OS 仓库的 tests/integration/benchmarks/script-engines/runner 提供真实宿主测量；build/host 命令通过 --dango-root 显式传入该 checkout。
 ```
 
 构建产物采用相同应用 ID：`lua/script-bench`、`ts/script-bench`。设备每次只运行与
@@ -46,11 +46,11 @@ TS 保留 EmbedTS 子集要求的索引检查。这些数值表示、对象访�
 
 ```sh
 # 小规模往返检查，不用作性能结论
-python3 -B tests/benchmarks/bench.py host \
+python3 -B tests/integration/benchmarks/bench.py host \
   target/script-bench-smoke --profile smoke --dango-root ../esp-32 --rounds 1
 
 # release 构建，五轮独立进程，逐轮交替 Lua / TS 的先后顺序
-python3 -B tests/benchmarks/bench.py host \
+python3 -B tests/integration/benchmarks/bench.py host \
   target/script-bench-host --profile host --dango-root ../esp-32 --rounds 5
 ```
 
@@ -84,7 +84,7 @@ Lua 没有对应接口，关闭后的字段为 null。自然 GC 参与测量，�
 本地生成较小分块、五个样本的设备短测包，不连接设备：
 
 ```sh
-python3 -B tests/benchmarks/bench.py build \
+python3 -B tests/integration/benchmarks/bench.py build \
   target/script-bench-device --profile device --dango-root ../esp-32-quick
 ```
 
@@ -114,7 +114,7 @@ python3 ../esp-32/scripts/device/session.py --port <运行时端口> \
   --push target/script-bench-device/ts/script-bench
 
 # 两个日志都包含完整 done 后比较；比较器不访问设备
-python3 -B tests/benchmarks/bench.py compare \
+python3 -B tests/integration/benchmarks/bench.py compare \
   target/script-bench-device/lua-device.log \
   target/script-bench-device/ts-device.log \
   --device-info target/script-bench-device/device-info.json \

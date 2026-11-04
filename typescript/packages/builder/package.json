@@ -6,7 +6,6 @@
     "embedts": "bin/embedts"
   },
   "scripts": {
-    "test": "cargo test -p embedts-builder --locked",
-    "check": "cargo check -p embedts-builder --locked"
+    "check": "./bin/embedts --version"
   }
 }

@@ -19,78 +19,78 @@
         "./examples/tools/photo/scripts/main.ts"
       ],
       "@dango/sdk/system": [
-        "./sdk/src/api/system.ts"
+        "./packages/sdk/src/api/system.ts"
       ],
       "@dango/sdk/hardware": [
-        "./sdk/src/api/hardware.ts"
+        "./packages/sdk/src/api/hardware.ts"
       ],
       "@dango/sdk/storage": [
-        "./sdk/src/api/storage.ts"
+        "./packages/sdk/src/api/storage.ts"
       ],
       "@dango/sdk/ui": [
-        "./sdk/src/api/ui.ts"
+        "./packages/sdk/src/api/ui.ts"
       ],
       "@dango/sdk/schema": [
-        "./sdk/src/api/schema.ts"
+        "./packages/sdk/src/api/schema.ts"
       ],
       "@dango/sdk/display": [
-        "./sdk/src/api/display.ts"
+        "./packages/sdk/src/api/display.ts"
       ],
       "@dango/sdk/image": [
-        "./sdk/src/api/image.ts"
+        "./packages/sdk/src/api/image.ts"
       ],
       "@dango/sdk/thread": [
-        "./sdk/src/api/thread.ts"
+        "./packages/sdk/src/api/thread.ts"
       ],
       "@dango/sdk/brain": [
-        "./sdk/src/api/brain.ts"
+        "./packages/sdk/src/api/brain.ts"
       ],
       "@dango/sdk/default-brain": [
-        "./sdk/src/api/default-brain.ts"
+        "./packages/sdk/src/api/default-brain.ts"
       ],
       "@dango/sdk/native": [
-        "./sdk/src/api/dango.d.ts"
+        "./packages/sdk/src/api/dango.d.ts"
       ],
       "@dango/sdk/game": [
-        "./sdk/src/helpers/game.ts"
+        "./packages/sdk/src/helpers/game.ts"
       ],
       "dango:system": [
-        "./sdk/src/api/system.ts"
+        "./packages/sdk/src/api/system.ts"
       ],
       "dango:hardware": [
-        "./sdk/src/api/hardware.ts"
+        "./packages/sdk/src/api/hardware.ts"
       ],
       "dango:storage": [
-        "./sdk/src/api/storage.ts"
+        "./packages/sdk/src/api/storage.ts"
       ],
       "dango:ui": [
-        "./sdk/src/api/ui.ts"
+        "./packages/sdk/src/api/ui.ts"
       ],
       "dango:schema": [
-        "./sdk/src/api/schema.ts"
+        "./packages/sdk/src/api/schema.ts"
       ],
       "dango:display": [
-        "./sdk/src/api/display.ts"
+        "./packages/sdk/src/api/display.ts"
       ],
       "dango:image": [
-        "./sdk/src/api/image.ts"
+        "./packages/sdk/src/api/image.ts"
       ],
       "dango:thread": [
-        "./sdk/src/api/thread.ts"
+        "./packages/sdk/src/api/thread.ts"
       ],
       "dango:brain": [
-        "./sdk/src/api/brain.ts"
+        "./packages/sdk/src/api/brain.ts"
       ],
       "dango:default-brain": [
-        "./sdk/src/api/default-brain.ts"
+        "./packages/sdk/src/api/default-brain.ts"
       ]
     }
   },
   "include": [
-    "sdk/src/**/*.ts",
+    "packages/sdk/src/**/*.ts",
     "examples/**/*.ts",
-    "tests/fixtures/**/*.ts",
-    "tests/device/**/*.ts",
-    "tests/benchmarks/ts/**/*.ts"
+    "../tests/integration/fixtures/**/*.ts",
+    "../tests/integration/device/**/*.ts",
+    "../tests/integration/benchmarks/ts/**/*.ts"
   ]
 }

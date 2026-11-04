@@ -6,7 +6,7 @@ IMU/磁力计/电量计、worker 二进制同步、归属锁、超时、停止�
 运行恢复原音量/静音并清理探针数据，不读取或删除用户照片。
 
 ```sh
-python3 tests/device/ts-parity/build.py target/ts-device-probe
+python3 tests/integration/device/ts-parity/build.py target/ts-device-probe
 python3 ../esp-32/scripts/device/session.py --log target/probe-device.log --seconds 85 \
   --push target/ts-device-probe/app
 ```
@@ -24,7 +24,7 @@ EmbedScope `input tap` 可验证平台事件路由；只有实际手指操作与
 受限 brain 的设备事务检查：
 
 ```sh
-python3 tests/device/ts-parity/brain_check.py target/ts-device-probe/brain --dango-root ../esp-32 \
+python3 tests/integration/device/ts-parity/brain_check.py target/ts-device-probe/brain --dango-root ../esp-32 \
   > target/ts-brain-device.log 2>&1
 ```
 

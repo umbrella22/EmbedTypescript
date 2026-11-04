@@ -168,84 +168,84 @@ importers:
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:builder
+        version: link:packages/builder
       tsrs:
         specifier: 0.20.1-ts7.1.0-beta
         version: 0.20.1-ts7.1.0-beta
-
-  builder: {}
 
   examples/games/2048:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../../sdk
+        version: link:../../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../../builder
+        version: link:../../../packages/builder
 
   examples/games/dino:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../../sdk
+        version: link:../../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../../builder
+        version: link:../../../packages/builder
 
   examples/games/flappy:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../../sdk
+        version: link:../../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../../builder
+        version: link:../../../packages/builder
 
   examples/games/snake:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../../sdk
+        version: link:../../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../../builder
+        version: link:../../../packages/builder
 
   examples/hello:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../sdk
+        version: link:../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../builder
+        version: link:../../packages/builder
 
   examples/system-demo:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../sdk
+        version: link:../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../builder
+        version: link:../../packages/builder
 
   examples/tools/photo:
     dependencies:
       '@dango/sdk':
         specifier: workspace:*
-        version: link:../../../sdk
+        version: link:../../../packages/sdk
     devDependencies:
       '@embedts/builder':
         specifier: workspace:*
-        version: link:../../../builder
+        version: link:../../../packages/builder
 
-  sdk: {}
+  packages/builder: {}
+
+  packages/sdk: {}
 
 packages:
 

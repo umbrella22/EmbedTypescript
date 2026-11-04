@@ -1,0 +1,5 @@
+#!/bin/sh
+embedts_rust="$(CDPATH= cd -- "$(dirname -- "$0")/../../../../rust" && pwd)"
+RUSTUP_TOOLCHAIN=$(awk -F '"' '/^channel =/ {print $2}' "$embedts_rust/rust-toolchain.toml")
+export RUSTUP_TOOLCHAIN
+exec cargo run --quiet --manifest-path "$embedts_rust/Cargo.toml" -p embedts-builder --locked -- "$@"

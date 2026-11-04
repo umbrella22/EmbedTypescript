@@ -16,11 +16,11 @@ flowchart LR
 
 ## 模块职责
 
-- `builder/`：主机 Rust CLI `embedts`，类型检查、模块打包、字节码生成与原子应用组装。构建器内置 SDK 源码与编译配置，安装后的原生二进制可独立运行。
-- `engine/`：`no_std + alloc` QuickJS-NG 引擎、内存记账、执行预算、异步任务、worker 和包校验。`compiler` feature 仅供主机构建器与引擎测试使用。
-- `sdk/`：宿主服务的 TypeScript 类型与辅助代码，公共入口为 `@dango/sdk/*`。服务协议由团子 OS 的 Rust 适配实现。
-- `examples/`：独立示例、游戏、工具应用和默认 brain 源码。
-- `tests/`：跨仓库宿主契约夹具、设备验收与脚本引擎对比基准。
+- `rust/builder/`：主机 Rust CLI `embedts`，类型检查、模块打包、字节码生成与原子应用组装。构建器内置 SDK 源码与编译配置，安装后的原生二进制可独立运行。
+- `rust/engine/`：`no_std + alloc` QuickJS-NG 引擎、内存记账、执行预算、异步任务、worker 和包校验。`compiler` feature 仅供主机构建器与引擎测试使用。
+- `typescript/packages/sdk/`：宿主服务的 TypeScript 类型与辅助代码，公共入口为 `@dango/sdk/*`。服务协议由团子 OS 的 Rust 适配实现。
+- `typescript/examples/`：独立示例、游戏、工具应用和默认 brain 源码。
+- `tests/integration/`：跨仓库宿主契约夹具、设备验收与脚本引擎对比基准。
 
 引擎仅依赖通用 Rust 库与 vendored QuickJS，不依赖团子 OS、app-host、LVGL 或 ESP HAL。引擎定义 allocator 回调，宿主提供分配函数。SDK 与团子 OS 服务协议对应，其他嵌入系统可实现自己的 Host。
 

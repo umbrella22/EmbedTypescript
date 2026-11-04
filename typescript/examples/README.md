@@ -11,8 +11,8 @@
 | `brain/default.ts` | 受限常驻行为模块，由 export-dangoos 导出 |
 
 ```sh
-cargo run -p embedts-builder -- app examples/games/snake --out target/snake
-python3 scripts/build_examples.py target/apps
+(cd rust && cargo run -p embedts-builder -- app ../typescript/examples/games/snake --out ../artifacts/snake)
+python3 scripts/build_examples.py artifacts/apps
 ```
 
 源码目录名与安装身份分离，安装身份来自 launcher 的 `id`。输出目录必须尚不存在，失败不会发布部分载荷。设备目录仍为 `/system/apps/<id>` 或 `/data/apps/<id>`，数据目录为 `/data/appdata/<id>`。
@@ -21,12 +21,12 @@ python3 scripts/build_examples.py target/apps
 
 ## 在团子 OS 中打包与安装
 
-先在本仓库根目录构建 `target/apps`，再进入相邻的团子 OS checkout 打包。输出目录必须尚不存在。
+先在本仓库根目录构建 `artifacts/apps`，再进入相邻的团子 OS checkout 打包。输出目录必须尚不存在。
 
 ```sh
 cd ../esp-32
-cargo run -p app-pack --locked --offline -- check ../EmbedTypescript/target/apps
-cargo run -p app-pack --locked --offline -- bundles ../EmbedTypescript/target/apps target/embedts-bundles
+cargo run -p app-pack --locked --offline -- check ../EmbedTypescript/artifacts/apps
+cargo run -p app-pack --locked --offline -- bundles ../EmbedTypescript/artifacts/apps target/embedts-bundles
 # 设备运行匹配引擎版本的 TS 固件后，可安装并运行指定应用。
 python3 scripts/device/console.py bundle-push target/embedts-bundles/snake --run
 ```
@@ -35,7 +35,7 @@ python3 scripts/device/console.py bundle-push target/embedts-bundles/snake --run
 独立应用包校验支持两种入口；需要生成包含这些应用的 system 镜像时，打包器必须选择 TS 引擎：
 
 ```sh
-cargo run -p app-pack --no-default-features --features ts-engine --locked --offline -- system ../EmbedTypescript/target/apps target/embedts-system --size 2031616
+cargo run -p app-pack --no-default-features --features ts-engine --locked --offline -- system ../EmbedTypescript/artifacts/apps target/embedts-system --size 2031616
 ```
 
 此处 `2031616` 是当前团子 OS 布局的 system 分区字节数，其他设备应使用自身分区大小。镜像构建与刷写独立执行。

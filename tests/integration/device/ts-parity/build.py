@@ -7,7 +7,7 @@ from pathlib import Path
 import shutil
 import subprocess
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 SOURCE = Path(__file__).resolve().parent
 
 
@@ -32,7 +32,7 @@ def main():
     for source, target in builds:
         run = subprocess.run(["cargo", "run", "-p", "embedts-builder", "--locked", "--offline", "--",
                               "build", str(source), "--out", str(target.resolve())],
-                             cwd=ROOT, text=True, capture_output=True)
+                             cwd=ROOT / "rust", text=True, capture_output=True)
         if run.returncode:
             raise SystemExit(run.stdout + run.stderr)
         data = target.read_bytes()

@@ -6,10 +6,10 @@
     "node": ">=24.11.1"
   },
   "scripts": {
-    "check": "cargo test --workspace --features embedts-engine/compiler --locked",
+    "check": "pnpm typecheck && pnpm check:apps",
     "typecheck": "tsrs --noEmit --project tsconfig.json",
     "check:apps": "pnpm --filter \"./examples/**\" -r check",
-    "build:apps": "python3 scripts/build_examples.py target/apps"
+    "build:apps": "python3 ../scripts/build_examples.py ../artifacts/apps"
   },
   "devDependencies": {
     "@embedts/builder": "workspace:*",

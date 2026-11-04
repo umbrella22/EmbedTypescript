@@ -18,11 +18,13 @@ def main():
     args = parser.parse_args()
     output = args.output.absolute()
     if output.exists(): raise ValueError(f"output already exists: {output}")
-    compiler = args.compiler.resolve() if args.compiler else ROOT / "target/debug/embedts"
+    compiler = args.compiler.resolve() if args.compiler else ROOT / "rust/target/debug/embedts"
     if not args.compiler:
-        subprocess.run(["cargo", "build", "-p", "embedts-builder", "--locked", "--offline"], cwd=ROOT, check=True)
-    manifests = [args.app.resolve() / "launcher.json"] if args.app else sorted((ROOT / "examples").rglob("launcher.json"))
-    manifests = [p for p in manifests if not any(part in ("dist", "node_modules") for part in p.relative_to(ROOT / "examples").parts)] if not args.app else manifests
+        subprocess.run(["cargo", "build", "-p", "embedts-builder", "--locked", "--offline"], cwd=ROOT / "rust", check=True)
+        metadata = subprocess.check_output(["cargo", "metadata", "--format-version=1", "--no-deps", "--locked", "--offline"], cwd=ROOT / "rust")
+        compiler = Path(json.loads(metadata)["target_directory"]) / "debug/embedts"
+    manifests = [args.app.resolve() / "launcher.json"] if args.app else sorted((ROOT / "typescript/examples").rglob("launcher.json"))
+    manifests = [p for p in manifests if not any(part in ("dist", "node_modules") for part in p.relative_to(ROOT / "typescript/examples").parts)] if not args.app else manifests
     if not manifests: raise ValueError("no example launchers found")
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix=f".{output.name}-", dir=output.parent))
@@ -31,12 +33,12 @@ def main():
         for manifest in manifests:
             with tempfile.TemporaryDirectory(prefix="embedts-app-") as stage:
                 payload = Path(stage) / "payload"
-                subprocess.run([str(compiler), "app", str(manifest.parent), "--out", str(payload)], cwd=ROOT, check=True)
+                subprocess.run([str(compiler), "app", str(manifest.parent), "--out", str(payload)], cwd=ROOT / "rust", check=True)
                 item = json.loads((payload / "build-report.json").read_text())["applications"][0]
                 identity = item["id"]
                 if identity in identities: raise ValueError(f"duplicate application id: {identity}")
                 identities.add(identity)
-                source_relative = manifest.parent.relative_to(ROOT / "examples") if not args.app else None
+                source_relative = manifest.parent.relative_to(ROOT / "typescript/examples") if not args.app else None
                 relative = Path(identity) if args.app else (
                     Path(*source_relative.parts[:-1]) / identity if len(source_relative.parts) > 1
                     else Path("examples") / identity

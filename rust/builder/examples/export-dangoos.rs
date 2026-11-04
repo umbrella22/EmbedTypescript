@@ -14,7 +14,11 @@ fn main() -> Result<(), String> {
     if destination.exists() {
         return Err("export destination already exists".into());
     }
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).parent().unwrap();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap();
     let parent = destination
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -22,12 +26,12 @@ fn main() -> Result<(), String> {
     fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     let temporary = tempfile::tempdir_in(parent).map_err(|e| e.to_string())?;
     let mut artifacts: Vec<Value> = Vec::new();
-    let fixture_root = root.join("tests/fixtures/dangoos");
+    let fixture_root = root.join("tests/integration/fixtures/dangoos");
     let mut sources: Vec<_> = fs::read_dir(&fixture_root)
         .map_err(|e| e.to_string())?
         .map(|e| e.unwrap().path())
         .collect();
-    sources.push(root.join("examples/brain/default.ts"));
+    sources.push(root.join("typescript/examples/brain/default.ts"));
     sources.sort();
     for source in sources {
         let Some(extension) = source.extension().and_then(|s| s.to_str()) else {

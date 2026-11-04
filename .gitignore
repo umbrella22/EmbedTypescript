@@ -1,4 +1,6 @@
 /target/
+/rust/target/
+/artifacts/
 node_modules/
 dist/
 __pycache__/

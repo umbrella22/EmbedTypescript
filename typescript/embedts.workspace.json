@@ -1,0 +1,9 @@
+{
+  "packages": [
+    "examples/games/2048",
+    "examples/games/dino",
+    "examples/games/flappy",
+    "examples/games/snake",
+    "examples/tools/photo"
+  ]
+}

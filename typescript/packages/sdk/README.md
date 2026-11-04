@@ -69,9 +69,9 @@ flag 更新。每个数组元素按上述字段顺序展开为原生命令，元
 
 ## 工作区与编译
 
-包通过根 pnpm workspace 链接，公开入口由 `package.json` 的 `exports` 定义。
+包通过`typescript/` pnpm workspace 链接，公开入口由 `package.json` 的 `exports` 定义。
 编译器读取相同导出表，原生 Cargo 编译也可以解析这些入口。正式应用不需要通过
 相对路径引用 SDK 或编译工具。已有独立客户端的 `dango:*` 平台别名继续解析到
 同一份 API 代码。
 
-[编译工具](../builder/README.md) 位于 `builder/`。宿主实现位于团子 OS 的 Rust 适配层，独立引擎不依赖 OS 的 app-host。
+[编译工具](../../../rust/builder/README.md) 位于 `rust/builder/`。宿主实现位于团子 OS 的 Rust 适配层，独立引擎不依赖 OS 的 app-host。
