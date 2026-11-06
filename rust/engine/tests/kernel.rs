@@ -45,6 +45,119 @@ fn literal(value: f64) -> String {
 }
 
 #[test]
+fn numeric_comparisons_match_independent_ieee_reference() {
+    let values = [
+        f64::NAN,
+        f64::NEG_INFINITY,
+        -f64::MAX,
+        -9_007_199_254_740_992.0,
+        -2_147_483_649.0,
+        -2_147_483_648.0,
+        -1.5,
+        -1.0,
+        -f64::MIN_POSITIVE,
+        -f64::from_bits(1),
+        -0.0,
+        0.0,
+        f64::from_bits(1),
+        f64::MIN_POSITIVE,
+        1.0,
+        1.5,
+        2_147_483_647.0,
+        2_147_483_648.0,
+        9_007_199_254_740_991.0,
+        9_007_199_254_740_992.0,
+        f64::MAX,
+        f64::INFINITY,
+    ];
+    let mut source = String::from(
+        "function check(a,b,want){const got=[a<b,a<=b,a>b,a>=b,a==b,a!=b,a===b,a!==b];\
+         if(got.join()!==want)throw Error(String(a)+','+String(b)+':'+got);} export function main(){",
+    );
+    let mut check = |a: f64, b: f64| {
+        let expected = [a < b, a <= b, a > b, a >= b, a == b, a != b, a == b, a != b]
+            .map(|value| value.to_string())
+            .join(",");
+        source.push_str(&format!(
+            "check(Number('{}'),Number('{}'),'{}');",
+            literal(a),
+            literal(b),
+            expected
+        ));
+    };
+    for a in values {
+        for b in values {
+            check(a, b);
+        }
+    }
+    let mut state = 0x31fa_8a10_dd29_4e6b_u64;
+    for _ in 0..512 {
+        state ^= state << 13;
+        state ^= state >> 7;
+        state ^= state << 17;
+        let a = f64::from_bits(state);
+        let b = f64::from_bits(state.rotate_left(29));
+        check(a, b);
+        check(a, state as i32 as f64);
+        check(state as i32 as f64, b);
+    }
+    source.push_str("return 42;}");
+    run(&source);
+}
+
+#[test]
+fn comparisons_preserve_nonnumeric_coercions_and_exception_order() {
+    run(r#"
+        function check(value, message) { if (!value) throw Error(message); }
+        export function main() {
+            check('10' < '2' && '10' <= '2', 'string ordering');
+            check('2' > '10' && '2' >= '10', 'reverse string ordering');
+            check('2' == 2 && '2' !== 2 && !('2' != 2) && !('2' === 2), 'string equality');
+            check(null == undefined && null !== undefined && null <= 0 && null >= 0, 'null');
+            check(!(undefined < 0) && !(undefined >= 0) && true == 1 && false == 0, 'primitives');
+            check(9007199254740993n > 9007199254740992 &&
+                  9007199254740992 < 9007199254740993n &&
+                  9007199254740992n == 9007199254740992 &&
+                  9007199254740992n !== 9007199254740992, 'bigint mixed');
+            check(3n > 2n && 3n >= 3n && 2n < '3' && !(2n < 'invalid'), 'bigint');
+            const symbol = Symbol('a');
+            check(symbol === symbol && symbol !== Symbol('a') && symbol != 1, 'symbol equality');
+            try { symbol < 1; throw Error('symbol ordering accepted'); }
+            catch(e) { check(e instanceof TypeError, 'symbol error'); }
+            const object = {};
+            check(object === object && object !== {} && !(object == 1), 'objects');
+            for (const op of ['<', '<=', '>', '>=', '==', '!=', '===', '!==']) {
+                let order = '';
+                const left = {[Symbol.toPrimitive](hint){order += 'l'+hint; return 1.5;}};
+                const right = {[Symbol.toPrimitive](hint){order += 'r'+hint; return 2;}};
+                if (op === '<') check(left < right, op);
+                if (op === '<=') check(left <= right, op);
+                if (op === '>') check(!(left > right), op);
+                if (op === '>=') check(!(left >= right), op);
+                if (op === '==') check(!(left == right), op);
+                if (op === '!=') check(left != right, op);
+                if (op === '===') check(!(left === right), op);
+                if (op === '!==') check(left !== right, op);
+                check(order === (op.length < 3 && op !== '==' && op !== '!=' ? 'lnumberrnumber' : ''), 'conversion order '+op);
+            }
+            let order = '';
+            const left = {valueOf(){order += 'l'; return 1.5;}};
+            check(left == 1.5 && order === 'l', 'abstract equality conversion');
+            const marker = {};
+            const bad = {valueOf(){throw marker;}};
+            const unseen = {valueOf(){throw Error('right converted after left failed');}};
+            try { bad >= unseen; throw Error('missing conversion exception'); }
+            catch(e) { check(e === marker, 'conversion exception'); }
+            let evaluated = '';
+            function getLeft(){evaluated += 'l'; return 1.5;}
+            function getRight(){evaluated += 'r'; return 2;}
+            check(getLeft() < getRight() && evaluated === 'lr', 'evaluation order');
+            return 42;
+        }
+    "#);
+}
+
+#[test]
 fn numeric_remainder_matches_independent_ieee_reference() {
     let mut source = String::from(
         "function check(a,b,r){if(!Object.is(a%b,r))throw Error(String(a)+' % '+String(b));} export function main(){",

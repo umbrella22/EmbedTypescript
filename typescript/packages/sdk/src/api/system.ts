@@ -1,6 +1,7 @@
 import { sync, syncVoid } from "./bridge.js";
 import { nowMs, sleep, delayUs } from "dango:host";
 export { nowMs, sleep, delayUs };
+/** Audio service status; PCM stream playback is not part of this SDK API. */
 export interface AudioStatus {
   available: boolean;
   controls_available: boolean;

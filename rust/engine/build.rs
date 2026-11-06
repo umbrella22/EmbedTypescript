@@ -13,6 +13,10 @@ const PATCHES: &[(&str, &str)] = &[
         "0002-integer-remainder",
         include_str!("patches/quickjs-ng/0002-integer-remainder.patch"),
     ),
+    (
+        "0003-numeric-comparisons",
+        include_str!("patches/quickjs-ng/0003-numeric-comparisons.patch"),
+    ),
 ];
 
 const SOURCES: &[&str] = &[

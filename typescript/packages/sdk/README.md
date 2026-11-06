@@ -16,6 +16,15 @@ import { Random } from "@dango/sdk/game";
 随机数辅助功能。这里与普通应用一样接受完整受限 TS 规则检查；放在同一个 SDK
 包内不赋予它宿主适配层的豁免。没有单独的 app-support 包。
 
+## 音频能力
+
+`system.audioStatus()` 查询设备音频服务，`setVolume()` 和 `setMuted()` 控制音量与
+静音。`capabilities().operations.audio` 列出 `status`、`set_volume`、`set_muted`，
+`audio_controls_allowed` 表示当前宿主允许控制音量和静音。
+
+PCM 输出流尚未接入 SDK；当前没有 `open_output`、PCM `write` 或播放句柄。
+音频状态中的 `available` 描述宿主服务状态，不能据此判断应用能够播放 PCM。
+
 ## 原生 UI 构建与更新
 
 `ui.build(parent, nodes)` 在一个宿主请求内创建一组控件、布局和事件绑定，返回通过

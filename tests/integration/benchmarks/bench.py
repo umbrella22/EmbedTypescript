@@ -303,18 +303,60 @@ def environment():
     return info
 
 
+def host_runners(output):
+    """Link this checkout's TS engine without changing the OS dependency lock."""
+    harness = output / "runner"
+    harness.mkdir()
+    # Reuse the production measurement adapter, including its timing boundaries.
+    # A separate workspace keeps the OS's pinned Git engine out of this build.
+    manifest = f'''[workspace]
+[package]
+name = "script-bench-runner"
+version = "0.0.0"
+edition = "2021"
+publish = false
+[[bin]]
+name = "script-bench-runner"
+path = {json.dumps(str(DANGO_REPO / "tests/benchmarks/script-engines/runner/src/main.rs"))}
+[features]
+default = []
+lua = ["dep:lua-engine"]
+ts = ["dep:ts-engine"]
+[dependencies]
+lua-engine = {{ path = {json.dumps(str(DANGO_REPO / "crates/lua-engine"))}, optional = true }}
+ts-engine = {{ package = "embedts-engine", path = {json.dumps(str(RUST / "engine"))}, optional = true }}
+serde_json = "1"
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+'''
+    (harness / "Cargo.toml").write_text(manifest)
+    shutil.copyfile(DANGO_REPO / "Cargo.lock", harness / "Cargo.lock")
+    log = output / "runner-build.log"
+    # Keep existing dependency versions when adapting the copied lock to paths.
+    command(["cargo", "metadata", "--format-version=1", "--offline",
+             "--manifest-path", harness / "Cargo.toml"], log, cwd=RUST)
+    target = target_dir() / "script-bench"
+    binaries = output / "bin"
+    binaries.mkdir()
+    for engine in ("lua", "ts"):
+        command(["cargo", "build", "--manifest-path", harness / "Cargo.toml",
+                 "--target-dir", target, "--release", "--no-default-features",
+                 "--features", engine, "--locked", "--offline"], log, cwd=RUST)
+        shutil.copy2(target / "release/script-bench-runner", binaries / engine)
+    return binaries, {"manifest_sha256": sha(harness / "Cargo.toml"),
+                      "lock_sha256": sha(harness / "Cargo.lock"),
+                      "ts_engine_path": str(RUST / "engine"),
+                      "lua_engine_path": str(DANGO_REPO / "crates/lua-engine")}
+
+
 def host(output, profile, rounds):
     output.mkdir(parents=True, exist_ok=False)
     receipt = build(output / "apps", profile, samples=1)
-    log = output / "runner-build.log"
-    binaries = output / "bin"
-    binaries.mkdir()
-    target = target_dir(DANGO_REPO)
-    for engine in ("lua", "ts"):
-        command(["cargo", "build", "-p", "script-bench-runner", "--release", "--no-default-features",
-                 "--features", engine, "--locked", "--offline"], log, cwd=DANGO_REPO)
-        shutil.copy2(target / "release/script-bench-runner", binaries / engine)
+    binaries, harness = host_runners(output)
     env = environment()
+    env["runner_workspace"] = harness
     env["runners"] = {e: sha(binaries / e) for e in ("lua", "ts")}
     env["compiler"] = receipt["compiler"]
     env["quickjs"] = receipt["quickjs"]
@@ -337,6 +379,10 @@ def host(output, profile, rounds):
             path.write_text(completed.stdout)
             (raw / f"{engine}-{trial + 1:02d}.stderr").write_text(completed.stderr)
             completed.check_returncode()
+            if engine == "ts":
+                runtime_id = bytes(json.loads(completed.stdout)["engine_id"]).hex()
+                if runtime_id != receipt["compiler"]["bytecode"]["engine_id"]:
+                    raise ValueError("benchmark compiler and runtime engine identities differ")
             runs[engine].append(read_run(path, engine))
             print(f"round {trial + 1}/{rounds}: {engine} checksums passed", flush=True)
     report = compare_runs(runs, env)

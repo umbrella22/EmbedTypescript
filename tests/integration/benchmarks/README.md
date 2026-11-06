@@ -1,7 +1,7 @@
 # Lua / TypeScript 计算跑分
 
 同一套确定性工作负载分别运行在 dangoOS 的 Lua 5.5.1 和 TS / QuickJS-NG 引擎中。
-TS 源码通过 `builder/` 的 tsrs、Rolldown 和 QuickJS 字节码链路构建。
+TS 源码通过 `rust/builder/` 的 tsrs、Rolldown 和 QuickJS 字节码链路构建。
 主机 runner 直接调用仓库中的生产 VM；每个可执行文件只链接一种解释器。
 
 所有测试资料集中在这个目录，正式应用集不包含跑分程序：
@@ -61,6 +61,9 @@ python3 -B tests/integration/benchmarks/bench.py host \
 - `environment.json`：CPU、操作系统、Rust、Git 状态、源码/二进制哈希和编译器版本。
 - `apps/`：两种应用 payload、通过 app-pack 验证的 bundle、构建日志与收据。
 - `bin/`：分别只启用 `lua`、`ts` feature 的 release runner。
+- `runner/`：独立测量工作区和锁文件；复用 OS runner 源码，直接依赖本 checkout 的
+  `rust/engine` 和所选 OS checkout 的 `crates/lua-engine`，避免测到 OS 锁定的旧 TS
+  引擎。该工作区不修改 OS 的依赖或锁文件，运行时引擎指纹必须与编译器一致。
 
 每轮创建一个新 VM，每个用例先完整预热一次，再测量一次。编译、模块加载、矩阵
 初始化和预热都位于样本计时区间之外。runner 用 `Instant` 累计 `resume`、Promise
@@ -137,8 +140,8 @@ profile、工作单元数量、预热次数、样本数、让出间隔和源码�
 ## 回归检查
 
 ```sh
-cargo test -p script-bench-runner --locked --offline
-python3 -B -m unittest discover -s tests/host -p test_script_benchmarks.py
+cargo test --manifest-path ../esp-32/Cargo.toml -p script-bench-runner --locked --offline
+python3 -B -m unittest discover -s tests/integration/benchmarks -p 'test_*.py'
 ```
 
 Rust 检查 VM 区间计时与调度区间的分离。Python 检查独立参考向量、完整日志、错误

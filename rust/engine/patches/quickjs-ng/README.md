@@ -8,10 +8,21 @@
 | --- | --- | --- |
 | `0001-settled-promise-reactions.patch` | 已兑现或拒绝的 Promise 直接为 reaction job 保存参数，省去两个临时 reaction 记录 | 异步 job 数量及顺序、默认 handler、拒绝跟踪、species 和引用释放；未完成 Promise 仍建立两个 reaction 记录 |
 | `0002-integer-remainder.patch` | int32 负数取余走整数指令；binary64 精确整数与非零 int32 除数从有效位重建整数后取余 | 负零、零除数、int32 最小值与 -1；小数、非有限数及绝对值大于 `2^53-1` 的输入进入上游路径；BigInt 和对象转换路径保持原有分派 |
+| `0003-numeric-comparisons.patch` | 64 位目标的关系比较函数在执行转换前直接比较实际为 int32 / binary64 的操作数 | binary64 精度、NaN 和正负零；主分派、已有 int32 / int32 路径、相等判断及其他类型的转换路径保持上游行为；32 位目标沿用上游比较实现 |
 
 第二项补丁使用已经存储的 binary64 位表示，限定转换范围并检查全部小数位。
 余数的绝对值小于除数的绝对值，非零结果始终可以用 int32 表示。该路径不改写
 `number` 精度，不跨字节码合并表达式，也不改变操作数求值或转换顺序。
+
+数值比较使用实际的 JS 值标签选择路径，仅接受 int32 和 binary64，直接进入上游
+已有的 `float64_compare` 分支。int32 到 binary64 的转换精确，不执行用户代码，
+数值也不携带需要释放的对象引用。关系比较遇到 NaN 返回 false，正负零比较相等。
+相等判断和其他类型的关系比较继续使用上游路径，保留对象求原始值、BigInt 与
+number 混合比较及异常顺序。
+
+该路径由 `INTPTR_MAX >= INT64_MAX` 限定到 64 位目标。Apple M2 对照中数值密集
+用例取得收益；ESP32-S31 的候选实测出现回退，因此 32 位目标保留原有比较代码。
+不同目标的收益和验证范围见[计算验证记录](../../../../docs/verification-20261106.md)。
 
 `build_support/patch.rs` 只应用本目录针对 `quickjs.c` 的统一差异文件，不依赖外部
 补丁程序。补丁字节、应用实现、构建配方和所选 profile 均参与 `ENGINE_ID`。
@@ -30,7 +41,9 @@ EMBEDTS_QJS_KERNEL_PROFILE=upstream cargo run -p embedts-engine --features compi
 ```
 
 `tests/kernel.rs` 对照 Rust 的独立浮点余数结果，覆盖全部候选指数、范围边界、
-随机整数与随机 binary64 位模式，并检查 BigInt、转换顺序、Promise reaction
+随机整数与随机 binary64 位模式。数值比较另以 Rust 的八种比较结果为参考，覆盖
+2,020 组边界值、随机 binary64 与 int32 混合值，并检查字符串、BigInt、Symbol、
+对象的比较与转换顺序。测试还覆盖 Promise reaction
 顺序、thenable、species、异常和内存不足后的释放。`tests/kernel_patches.rs` 检查
 上游摘要、补丁顺序、上下文偏移和重复应用拒绝。
 

@@ -100,3 +100,5 @@ pnpm -C typescript toolchain:install /path/to/embedts-0.2.0-darwin-arm64.json
 该入口执行来源校验、Rust 格式与测试、真实 SDK 集成测试、基准协议测试、命令入口测试、TS 类型检查和应用检查。CI 分别验证缺少 TypeScript 目录的 Rust 工作区，以及使用预编译构建器、缺少 Rust 目录的 TS 工作区；分发检查从本地包安装到临时工程，随后以空 `PATH` 构建。
 
 TS 7 仍是预发布工具链。精确 tsrs 提交、TypeScript 提交和 Rolldown 版本由构建器 `--version` 与 `rust/Cargo.lock` 记录。OS 原生 UI、服务和实体设备验收在消费端独立执行。本次迁移证据与限制见[验证记录](docs/verification-20261105.md)。
+
+数值比较优化、Lua / TS 计算对照及主机和设备验证见[计算验证记录](docs/verification-20261106.md)。
