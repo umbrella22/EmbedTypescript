@@ -1,0 +1,34 @@
+--- a/quickjs.c
++++ b/quickjs.c
+@@ -18445,6 +18445,31 @@
+             sp--;
+             BREAK;
+         CASE(OP_dup):
++            /* Nullish coalescing retains the original value while testing a
++             * duplicate. No reference can reach zero when that copy is freed. */
++            if (*pc == OP_is_undefined_or_null &&
++                (pc[1] == OP_if_false8 || pc[1] == OP_if_true8 ||
++                 pc[1] == OP_if_false || pc[1] == OP_if_true)) {
++                int branch = pc[1];
++                int res = JS_IsUndefined(sp[-1]) || JS_IsNull(sp[-1]);
++                DUMP_BYTECODE_OR_DONT(pc);
++#ifdef EMBEDTS_QJS_DIAGNOSTICS
++                embedts_note_opcode(rt, pc, b->byte_code_buf + b->byte_code_len, 0);
++#endif
++                pc++;
++                DUMP_BYTECODE_OR_DONT(pc);
++#ifdef EMBEDTS_QJS_DIAGNOSTICS
++                embedts_note_opcode(rt, pc, b->byte_code_buf + b->byte_code_len, 0);
++#endif
++                pc++;
++                if (branch == OP_if_false8 || branch == OP_if_true8)
++                    pc += res == (branch == OP_if_true8) ? (int8_t)*pc : 1;
++                else
++                    pc += res == (branch == OP_if_true) ? (int32_t)get_u32(pc) : 4;
++                if (unlikely(js_poll_interrupts(ctx)))
++                    goto exception;
++                BREAK;
++            }
+             sp[0] = js_dup(sp[-1]);
+             sp++;
+             BREAK;

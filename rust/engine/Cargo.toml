@@ -12,10 +12,15 @@ links = "embedts"
 default = []
 # Host tools only. Firmware must never enable the source compiler.
 compiler = []
+# Counts interpreter work; timing measurements use builds without this feature.
+diagnostics = []
 
 [dependencies]
 serde_json = { version = "1", default-features = false, features = ["alloc"] }
 sha2 = { version = "0.10", default-features = false }
+
+[target.'cfg(not(target_has_atomic = "32"))'.dependencies]
+portable-atomic = { version = "1.13", default-features = false, features = ["critical-section"] }
 
 [build-dependencies]
 cc = "1"
@@ -28,3 +33,7 @@ required-features = ["compiler"]
 [[example]]
 name = "kernel-bench"
 required-features = ["compiler"]
+
+[[example]]
+name = "interpreter-profile"
+required-features = ["compiler", "diagnostics"]

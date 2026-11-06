@@ -102,3 +102,5 @@ pnpm -C typescript toolchain:install /path/to/embedts-0.2.0-darwin-arm64.json
 TS 7 仍是预发布工具链。精确 tsrs 提交、TypeScript 提交和 Rolldown 版本由构建器 `--version` 与 `rust/Cargo.lock` 记录。OS 原生 UI、服务和实体设备验收在消费端独立执行。本次迁移证据与限制见[验证记录](docs/verification-20261105.md)。
 
 数值比较优化、Lua / TS 计算对照及主机和设备验证见[计算验证记录](docs/verification-20261106.md)。
+
+可移植空值指令合并、可选解释器诊断与多架构验证见[分派优化验证记录](docs/verification-20261107.md)。

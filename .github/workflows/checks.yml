@@ -3,6 +3,23 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  kernel-portability:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout: rust
+      - name: Install pinned Rust
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("rust/rust-toolchain.toml", "rb"))["toolchain"]["channel"])')
+          rustup toolchain install "$version" --profile minimal
+      - name: Check interpreter semantics and diagnostic isolation
+        working-directory: rust
+        run: cargo test -p embedts-engine --features compiler,diagnostics --locked
   rust:
     runs-on: ubuntu-24.04
     steps:

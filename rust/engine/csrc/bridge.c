@@ -40,6 +40,14 @@ typedef struct {
     JSValue entry;
 } DangoTs;
 
+#ifdef EMBEDTS_QJS_DIAGNOSTICS
+#include "diagnostics.h"
+extern void embedts_qjs_diagnostics(JSRuntime *, EmbedTsInterpreterDiagnostics *, int);
+void embedts_diagnostics(DangoTs *vm, EmbedTsInterpreterDiagnostics *out, int reset) {
+    embedts_qjs_diagnostics(vm->rt, out, reset);
+}
+#endif
+
 static void track_rejection(JSContext *ctx, JSValueConst promise, JSValueConst reason, bool handled, void *opaque) {
     DangoTs *vm = opaque;
     Rejection **item = &vm->rejections;

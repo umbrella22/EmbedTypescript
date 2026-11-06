@@ -1,6 +1,8 @@
 use sha2::{Digest, Sha256};
 use std::{fs, path::PathBuf};
 
+#[path = "build_support/diagnostics.rs"]
+mod diagnostics;
 #[path = "build_support/patch.rs"]
 mod patch;
 
@@ -16,6 +18,10 @@ const PATCHES: &[(&str, &str)] = &[
     (
         "0003-numeric-comparisons",
         include_str!("patches/quickjs-ng/0003-numeric-comparisons.patch"),
+    ),
+    (
+        "0004-nullish-branches",
+        include_str!("patches/quickjs-ng/0004-nullish-branches.patch"),
     ),
 ];
 
@@ -67,6 +73,7 @@ fn replace_function(source: &mut String, name: &str, body: &str) {
 fn main() {
     let device = std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "none";
     let compiler = std::env::var_os("CARGO_FEATURE_COMPILER").is_some();
+    let diagnostics = std::env::var_os("CARGO_FEATURE_DIAGNOSTICS").is_some();
     assert!(
         !(device && compiler),
         "embedts-engine/compiler is host-only"
@@ -98,6 +105,12 @@ fn main() {
         }
         fs::write(out.join("quickjs.c"), source).unwrap();
     }
+    digest.update([u8::from(diagnostics)]);
+    if diagnostics {
+        let mut source = fs::read_to_string(out.join("quickjs.c")).unwrap();
+        diagnostics::instrument(&mut source);
+        fs::write(out.join("quickjs.c"), source).unwrap();
+    }
     // Keep vendored sources byte-for-byte upstream. Portability edits apply to
     // the build copy, identically for host and device threading semantics.
     let mut utils = fs::read_to_string(out.join("cutils.h")).unwrap();
@@ -121,6 +134,13 @@ fn main() {
     digest.update(fs::read("csrc/calendar.c").unwrap());
     digest.update(fs::read("build.rs").unwrap());
     digest.update(fs::read("build_support/patch.rs").unwrap());
+    for name in [
+        "csrc/diagnostics.h",
+        "csrc/diagnostics.inc",
+        "build_support/diagnostics.rs",
+    ] {
+        digest.update(fs::read(name).unwrap());
+    }
     let id: [u8; 32] = digest.finalize().into();
     fs::write(
         out.join("engine_id.rs"),
@@ -136,6 +156,7 @@ fn main() {
     let mut build = cc::Build::new();
     build
         .include(&out)
+        .include("csrc")
         .define("EMBEDTS_QJS_SINGLE_THREAD", None)
         .define("__STDC_NO_ATOMICS__", "1")
         .define("NDEBUG", None)
@@ -154,6 +175,9 @@ fn main() {
         build.define("EMBEDTS_COMPILER", None);
     } else {
         build.define("QJS_DISABLE_PARSER", None);
+    }
+    if diagnostics {
+        build.define("EMBEDTS_QJS_DIAGNOSTICS", None);
     }
     for name in ["quickjs.c", "libregexp.c", "libunicode.c", "dtoa.c"] {
         build.file(out.join(name));

@@ -38,6 +38,7 @@ fn upstream_source_and_ordered_patch_series_match_the_pinned_manifest() {
         include_str!("../patches/quickjs-ng/0001-settled-promise-reactions.patch"),
         include_str!("../patches/quickjs-ng/0002-integer-remainder.patch"),
         include_str!("../patches/quickjs-ng/0003-numeric-comparisons.patch"),
+        include_str!("../patches/quickjs-ng/0004-nullish-branches.patch"),
     ] {
         source = patch::apply(&source, diff).unwrap();
         assert!(

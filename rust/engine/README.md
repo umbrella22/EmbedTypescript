@@ -11,7 +11,16 @@ QuickJS-NG 固定在提交 `e22ce4de4362dc5fd4794cfa3c03fc7fdba5f015`。
 上游源文件原样保存，`build.rs` 在构建副本中应用
 [内核补丁](patches/quickjs-ng/README.md)，并适配单线程和设备时钟。
 补丁内容和构建配方计入包的引擎指纹，主机编译器与设备运行时必须使用同一配置。
-设备使用工程现有的 Espressif GCC/newlib 工具链。
+S31 固件使用消费工程配置的 Espressif GCC/newlib；其他目标由宿主选择对应 C
+工具链与 libc。
+
+解释器优化使用可移植 C 实现，数值仍遵循 binary64 语义。指令组合保留原来的
+操作顺序和中断检查，不要求应用改写算法或使用设备专属 API。不同 CPU 的代码布局、
+缓存和浮点硬件会影响收益；性能结论按实际测试架构记录。
+
+没有 32 位原子比较交换指令的目标通过 `portable-atomic` 分配唯一实例编号；
+宿主需提供 `critical-section` 实现。RV32IMC 的 ESP32-C3 和不具备对应原子指令的
+Cortex-M 目标可使用这一路径。支持原子指令的目标使用 `core` 原子操作。
 
 默认 feature 集为空，定义 `QJS_DISABLE_PARSER`。`compiler` 只供主机工具使用；
 在 `target_os = "none"` 启用时直接构建失败。源码生成入口、Proxy、Date、正则、
@@ -24,6 +33,26 @@ cargo run -p embedts-engine --example run -- target/hello.etb
 ```
 
 引擎不依赖 OS 的 app-host 或硬件库。OS 在 Rust 适配层实现 Host，并通过 feature 保证只链接一个 VM；固件普通依赖不启用 `compiler`。
+
+## 解释器诊断
+
+可选 `diagnostics` feature 记录每 VM 的执行指令数、实际分派次数、相邻指令组合
+候选数和 QuickJS 分配函数调用数。`Vm::interpreter_diagnostics(reset)` 返回快照，
+并可在读取后清零。`opcode_name` 把当前引擎的指令编号映射为名称。
+
+```sh
+cargo run -p embedts-engine --features compiler,diagnostics --release \
+  --example interpreter-profile -- /absolute/path/workloads.js main 128
+```
+
+示例编译可信 JavaScript 模块，调用指定导出并输出 JSON；`compiler` 仍仅限主机。
+设备只启用 `diagnostics` 即可读取预编译应用的计数。计数包括入口内的嵌套调用和
+Promise jobs；模块加载后重置可排除初始化。相邻候选数可能包含随后抛出异常的指令，
+不能视为已经成功合并的次数。分配调用数包含嵌套入口，不等于 backing 分配次数。
+
+诊断功能为每个 runtime 增加 2,128 B 计数存储，计入引擎分配账本，并改变引擎指纹。
+正式性能对照关闭该 feature；诊断数据描述执行工作量，不能直接换算为耗时比例。
+默认构建没有诊断存储、计数更新或查询接口。
 
 ## 调用接口
 

@@ -5,12 +5,16 @@ extern crate alloc;
 #[cfg(all(target_os = "none", feature = "compiler"))]
 compile_error!("embedts-engine/compiler is available only to host tools");
 mod allocator;
+#[cfg(feature = "diagnostics")]
+mod diagnostics;
 mod host;
 mod package;
 mod platform;
 mod runtime;
 pub mod workers;
 pub use allocator::MemoryStats;
+#[cfg(feature = "diagnostics")]
+pub use diagnostics::{opcode_name, InterpreterDiagnostics};
 pub use host::{CallState, Draw, Host, HostError, HostReply, HostRequest, Request, RequestId};
 pub use package::{Package, HEADER_BYTES, HOST_ABI};
 pub use platform::{RawAllocator, GLOBAL_ALLOCATOR};

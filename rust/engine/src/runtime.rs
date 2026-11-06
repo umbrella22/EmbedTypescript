@@ -5,7 +5,10 @@ use crate::{
 #[cfg(test)]
 mod allocator_tests;
 use alloc::{boxed::Box, collections::VecDeque, ffi::CString, rc::Rc, string::String, vec::Vec};
+#[cfg(target_has_atomic = "32")]
 use core::sync::atomic::{AtomicU32, Ordering};
+#[cfg(not(target_has_atomic = "32"))]
+use portable_atomic::{AtomicU32, Ordering};
 static INSTANCE: AtomicU32 = AtomicU32::new(1);
 use core::{
     ffi::{c_char, c_int, c_void},
@@ -508,9 +511,14 @@ impl Vm {
                 "runtime limits must be nonzero",
             ));
         }
-        let instance = INSTANCE
-            .try_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1))
-            .map_err(|_| Error::new(ErrorKind::State, "runtime instance ids exhausted"))?;
+        #[cfg(target_has_atomic = "32")]
+        let instance =
+            INSTANCE.try_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1));
+        #[cfg(not(target_has_atomic = "32"))]
+        let instance =
+            INSTANCE.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |n| n.checked_add(1));
+        let instance =
+            instance.map_err(|_| Error::new(ErrorKind::State, "runtime instance ids exhausted"))?;
         let mut queued = VecDeque::new();
         let mut outstanding = Vec::new();
         queued
@@ -810,6 +818,20 @@ impl Vm {
     }
     pub fn profile(&self) -> Profile {
         self.state.profile
+    }
+    /// Snapshot interpreter counters, optionally resetting them after the read.
+    /// This method is present only in instrumented diagnostic builds.
+    #[cfg(feature = "diagnostics")]
+    pub fn interpreter_diagnostics(&mut self, reset: bool) -> crate::InterpreterDiagnostics {
+        let mut result = core::mem::MaybeUninit::uninit();
+        unsafe {
+            crate::diagnostics::embedts_diagnostics(
+                self.raw.as_ptr(),
+                result.as_mut_ptr(),
+                i32::from(reset),
+            );
+            result.assume_init()
+        }
     }
     /// Releases all engine allocations and returns their final ledger.
     pub fn close(self) -> MemoryStats {

@@ -45,6 +45,75 @@ fn literal(value: f64) -> String {
 }
 
 #[test]
+fn nullish_sequences_preserve_values_identity_order_and_long_branches() {
+    let mut source = String::from("let calls=0;function fallback(){calls++;return 42;}function short(x){return x??fallback();}function long(x){return x??(");
+    source.push_str(&"calls++,".repeat(96));
+    source.push_str("42);}function longOptional(x){return x?.[(");
+    source.push_str(&"calls++,".repeat(96));
+    source.push_str(r#"'value')];}
+        export function main(){
+            const object={ [Symbol.toPrimitive](){throw Error('unexpected coercion');} };
+            const fn=()=>1, symbol=Symbol('kept'), array=[1,2];
+            for(const value of [false,0,-0,NaN,Infinity,-Infinity,'',1n,symbol,object,fn,array]){
+                if(!Object.is(short(value),value)||!Object.is(long(value),value))throw Error('value changed');
+            }
+            if(calls!==0)throw Error('eager fallback');
+            if(short(null)!==42||short(undefined)!==42||calls!==2)throw Error('short nullish');
+            if(long(null)!==42||long(undefined)!==42||calls!==194)throw Error('long nullish');
+            if(longOptional(null)!==undefined||longOptional(undefined)!==undefined||calls!==194)throw Error('optional lazy key');
+            if(longOptional({value:object})!==object||calls!==290)throw Error('long optional key');
+            let reads=0,writes=0,rhs=0,current=null;
+            const accessor={get value(){reads++;return current;},set value(v){writes++;current=v;}};
+            accessor.value??=(rhs++,7);
+            accessor.value??=(rhs++,8);
+            if(reads!==2||writes!==1||rhs!==1||current!==7)throw Error('nullish assignment order');
+            const child={value:object}, present={child};
+            if(present?.child?.value!==object||null?.child!==undefined)throw Error('optional chain');
+            let evaluations=0;
+            if(((evaluations++,null)??(evaluations++,9))!==9)throw Error('fallback result');
+            if(evaluations!==2)throw Error('evaluation count');
+            try{null??(()=>{throw object;})();throw Error('missing exception');}
+            catch(error){if(error!==object)throw Error('exception identity');}
+            let sum=0;
+            const values=[undefined,null,0,-0,NaN,false,'',object];
+            for(let i=0;i<2048;i++){
+                const value=values[i%values.length];
+                const got=value??object;
+                if(got===object)sum++;
+            }
+            if(sum!==768)throw Error('loop result');
+            return 42;
+        }
+    "#);
+    run(&source);
+}
+
+#[test]
+fn nullish_sequences_retain_interrupt_budget() {
+    // No loops or nested calls can provide a substitute interrupt poll.
+    let mut source = String::from("export function main(x){let sum=0;");
+    source.push_str(&"sum+=(x??1);".repeat(20_000));
+    source.push_str("return sum;}");
+    let bytes = compile_module(&source).unwrap();
+    let mut vm = Vm::new(
+        Box::new(()),
+        Limits {
+            interrupt_polls: 1,
+            ..Default::default()
+        },
+        &GLOBAL_ALLOCATOR,
+    )
+    .unwrap();
+    // This test compiles the module with the matching trusted compiler.
+    unsafe { vm.load(Package::parse(&bytes).unwrap()) }.unwrap();
+    assert_eq!(
+        vm.start("main", None).unwrap_err().kind,
+        embedts_engine::ErrorKind::Budget
+    );
+    assert_eq!(vm.close().used, 0);
+}
+
+#[test]
 fn numeric_comparisons_match_independent_ieee_reference() {
     let values = [
         f64::NAN,

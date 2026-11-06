@@ -9,6 +9,7 @@
 | `0001-settled-promise-reactions.patch` | 已兑现或拒绝的 Promise 直接为 reaction job 保存参数，省去两个临时 reaction 记录 | 异步 job 数量及顺序、默认 handler、拒绝跟踪、species 和引用释放；未完成 Promise 仍建立两个 reaction 记录 |
 | `0002-integer-remainder.patch` | int32 负数取余走整数指令；binary64 精确整数与非零 int32 除数从有效位重建整数后取余 | 负零、零除数、int32 最小值与 -1；小数、非有限数及绝对值大于 `2^53-1` 的输入进入上游路径；BigInt 和对象转换路径保持原有分派 |
 | `0003-numeric-comparisons.patch` | 64 位目标的关系比较函数在执行转换前直接比较实际为 int32 / binary64 的操作数 | binary64 精度、NaN 和正负零；主分派、已有 int32 / int32 路径、相等判断及其他类型的转换路径保持上游行为；32 位目标沿用上游比较实现 |
+| `0004-nullish-branches.patch` | 连续执行 `dup`、`is_undefined_or_null` 和条件跳转，保留原值并省去临时副本、布尔值及两次分派 | null / undefined 判定、其他值的身份与精度、短 / 长跳转目标、fallback 惰性执行及原跳转的中断检查 |
 
 第二项补丁使用已经存储的 binary64 位表示，限定转换范围并检查全部小数位。
 余数的绝对值小于除数的绝对值，非零结果始终可以用 int32 表示。该路径不改写
@@ -23,6 +24,14 @@ number 混合比较及异常顺序。
 该路径由 `INTPTR_MAX >= INT64_MAX` 限定到 64 位目标。Apple M2 对照中数值密集
 用例取得收益；ESP32-S31 的候选实测出现回退，因此 32 位目标保留原有比较代码。
 不同目标的收益和验证范围见[计算验证记录](../../../../docs/verification-20261106.md)。
+
+空值指令组合使用同一套 C 代码服务所有目标，不增加字节码指令或改变载荷格式。
+被省略的引用复制和释放相互抵消，栈上原引用始终存活。其他 `dup` 序列执行原路径。
+诊断构建仍统计组合中的三条逻辑指令，只记录一次实际分派。
+主机与 S31 的收益、回退和移植验证边界见[分派优化验证记录](../../../../docs/verification-20261107.md)。
+
+`build_support/diagnostics.rs` 在选定内核之后，对构建副本加入可选计数钩子，
+同时支持 `optimized` 和 `upstream`。钩子要求唯一的源码锚点，默认构建不加入钩子。
 
 `build_support/patch.rs` 只应用本目录针对 `quickjs.c` 的统一差异文件，不依赖外部
 补丁程序。补丁字节、应用实现、构建配方和所选 profile 均参与 `ENGINE_ID`。
